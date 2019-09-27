@@ -53,3 +53,7 @@ insert_cmd : 'INSERT INTO' relation_name 'VALUES FROM' ( literal { ,
 				literal } ) 
 				| 'INSERT INTO' relation_name 'VALUES FROM RELATION' expr;
 delete_cmd : 'DELETE FROM' relation_name 'WHERE' condition;
+
+// BATCH 5
+command : ( open_cmd | close_cmd | write_cmd | exit_cmd | show_cmd | 
+			create_cmd | update_cmd | insert_cmd | delete_cmd ) ;
