@@ -23,8 +23,8 @@ type : VARCHAR ( integer ) | INTEGER;
 attribute_list : attribute-name { , attribute-name }; 
 typed_attribute_list : attribute_name type { , attribute-name type };
 open_cmd : OPEN relation_name ;
-close_cmd :CLOSE relation_name;
-write_cmd :WRITE relation_name ;
+close_cmd : 'CLOSE' relation_name;
+write_cmd : 'WRITE' relation_name ;
 exit_cmd :EXIT;
 
 // BATCH 2
