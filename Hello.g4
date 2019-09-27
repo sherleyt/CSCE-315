@@ -19,13 +19,13 @@ literal : STRING_LITERAL | INTEGER;
 relation_name : IDENTIFIER;
 attribute_name : IDENTIFIER;
 operand : attribute_name | literal;
-type : VARCHAR ( integer ) | INTEGER;
-attribute_list : attribute-name { , attribute-name }; 
+type : 'VARCHAR' (INTEGER) | INTEGER;
+attribute_list : attribute_name { , attribute_name }; 
 typed_attribute_list : attribute_name type { , attribute-name type };
-open_cmd : OPEN relation_name ;
+open_cmd : 'OPEN' relation_name ;
 close_cmd : 'CLOSE' relation_name;
 write_cmd : 'WRITE' relation_name ;
-exit_cmd :EXIT;
+exit_cmd : 'EXIT';
 
 // BATCH 2
 
