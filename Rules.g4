@@ -24,7 +24,6 @@ conjunction :comparison { && comparison };
 comparison : operand 'op' operand | ( condition );
 
 // BATCH 3
-
 expr         : atomic_expr | selection | projection | renaming | union | difference | product | natural_join;
 atomic_expr  : relation_name | '('expr')';
 selection    : 'select' '('condition')' atomic_expr;
