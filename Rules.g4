@@ -3,15 +3,6 @@
  */
 grammar Rules;
 
-// LEXER RULES
-OP : '=='| '!=' | '<' | '>' | '<=' | '>='; 
-ALPHA : ( 'a' .. 'z' | 'A' .. 'Z' | '_');
-DIGIT: '0'..'9';  
-INTEGER : DIGIT { DIGIT };
-IDENTIFIER : ALPHA { ( ALPHA | DIGIT ) };
-STRING_LITERAL : ( ALPHA | DIGIT )+;
-WS : [ \t\r\n]+ -> skip ;
-
 // PARSER RULES
 
 // BATCH 1
@@ -33,6 +24,7 @@ conjunction :comparison { && comparison };
 comparison : operand 'op' operand | ( condition );
 
 // BATCH 3
+
 expr         : atomic_expr | selection | projection | renaming | union | difference | product | natural_join;
 atomic_expr  : relation_name | '('expr')';
 selection    : 'select' '('condition')' atomic_expr;
@@ -43,11 +35,12 @@ difference   : atomic_expr '-' atomic_expr;
 product      : atomic_expr '*' atomic_expr;
 natural_join : atomic_expr '&' atomic_expr;
 
+
 // BATCH 4
 show_cmd : 'SHOW' atomic_expr;
 create_cmd : 'CREATE TABLE' relation_name ( typed_attribute_list ) 
 				'PRIMARY KEY' ( attribute_list );
-update_cmd : 'UPDATE' relation_name 'SET' attribute_name = literal { , 
+update_cmd : 'UPDATE' relation_name 'SET' attribute_name '=' literal { , 
 				attribute_name = literal } 'WHERE' condition;
 insert_cmd : 'INSERT INTO' relation_name 'VALUES FROM' ( literal { , 
 				literal } ) 
@@ -57,5 +50,5 @@ delete_cmd : 'DELETE FROM' relation_name 'WHERE' condition;
 // BATCH 5
 command : ( open_cmd | close_cmd | write_cmd | exit_cmd | show_cmd | 
 			create_cmd | update_cmd | insert_cmd | delete_cmd ) ;
-query : relation_name '<-' expr ';' ; // NOT WORKING ; added '<-';
-program : { ( query | command ) };			
+query : relation_name '<-' expr;
+program : { ( query | command ) };
