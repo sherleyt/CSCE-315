@@ -1,7 +1,7 @@
 /**
- * Define a grammar called Hello
+ * Define a grammar called Rules
  */
-grammar Hello;
+grammar Rules;
 
 // LEXER RULES
 OP : '=='| '!=' | '<' | '>' | '<=' | '>='; 
@@ -29,3 +29,16 @@ exit_cmd : 'EXIT';
 
 // BATCH 2
 
+
+
+
+// BATCH 3
+expr         : atomic_expr | selection | projection | renaming | union | difference | product | natural_join;
+atomic_expr  : relation_name | '('expr')';
+selection    : 'select' '('condition')' atomic_expr;
+projection   : 'project' '('attribute_list')' atomic_expr;
+renaming     : 'rename' '('attribute_list')' atomic_expr;
+union        : atomic_expr '+' atomic_expr;
+difference   : atomic_expr '-' atomic_expr;
+product      : atomic_expr '*' atomic_expr;
+natural_join : atomic_expr '&' atomic_expr;
