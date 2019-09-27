@@ -1,11 +1,12 @@
 /**
  * Define a grammar called Rules
  */
-grammar Rules;
+grammar Hello;
 
 // PARSER RULES
 
 // BATCH 1
+
 literal : STRING_LITERAL | INTEGER;
 relation_name : IDENTIFIER;
 attribute_name : IDENTIFIER;
@@ -19,11 +20,13 @@ write_cmd : 'WRITE' relation_name ;
 exit_cmd : 'EXIT';
 
 // BATCH 2
+
 condition : conjunction { || conjunction };
 conjunction :comparison { && comparison };
-comparison : operand OP operand | ( condition );
+comparison : { condition } operand OP operand | ;
 
 // BATCH 3
+
 expr         : atomic_expr | selection | projection | renaming | union | difference | product | natural_join;
 atomic_expr  : relation_name | '('expr')';
 selection    : 'select' '('condition')' atomic_expr;
