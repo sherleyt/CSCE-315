@@ -21,7 +21,7 @@ exit_cmd : 'EXIT';
 // BATCH 2
 condition : conjunction { || conjunction };
 conjunction :comparison { && comparison };
-comparison : operand 'op' operand | ( condition );
+comparison : operand OP operand | ( condition );
 
 // BATCH 3
 expr         : atomic_expr | selection | projection | renaming | union | difference | product | natural_join;
