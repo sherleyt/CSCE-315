@@ -1,16 +1,7 @@
 /**
  * Define a grammar called Rules
  */
-grammar Hello;
-
-// LEXER RULES
-OP : '=='| '!=' | '<' | '>' | '<=' | '>='; 
-ALPHA : ( 'a' .. 'z' | 'A' .. 'Z' | '_');
-DIGIT: '0'..'9';  
-INTEGER : DIGIT { DIGIT };
-IDENTIFIER : ALPHA { ( ALPHA | DIGIT ) };
-STRING_LITERAL : ( ALPHA | DIGIT )+;
-WS : [ \t\r\n]+ -> skip ;
+grammar Rules;
 
 // PARSER RULES
 
@@ -21,7 +12,7 @@ relation_name : IDENTIFIER;
 attribute_name : IDENTIFIER;
 operand : attribute_name | literal;
 type : 'VARCHAR' (INTEGER) | INTEGER;
-attribute_list : attribute_name { , attribute_name }; 
+attribute_list : attribute_name { , attribute_name };
 typed_attribute_list : attribute_name type { , attribute-name type };
 open_cmd : 'OPEN' relation_name ;
 close_cmd : 'CLOSE' relation_name;
@@ -48,17 +39,17 @@ natural_join : atomic_expr '&' atomic_expr;
 
 // BATCH 4
 show_cmd : 'SHOW' atomic_expr;
-create_cmd : 'CREATE TABLE' relation_name ( typed_attribute_list ) 
+create_cmd : 'CREATE TABLE' relation_name ( typed_attribute_list )
 				'PRIMARY KEY' ( attribute_list );
-update_cmd : 'UPDATE' relation_name 'SET' attribute_name '=' literal { , 
+update_cmd : 'UPDATE' relation_name 'SET' attribute_name '=' literal { ,
 				attribute_name = literal } 'WHERE' condition;
-insert_cmd : 'INSERT INTO' relation_name 'VALUES FROM' ( literal { , 
-				literal } ) 
+insert_cmd : 'INSERT INTO' relation_name 'VALUES FROM' ( literal { ,
+				literal } )
 				| 'INSERT INTO' relation_name 'VALUES FROM RELATION' expr;
 delete_cmd : 'DELETE FROM' relation_name 'WHERE' condition;
 
 // BATCH 5
-command : ( open_cmd | close_cmd | write_cmd | exit_cmd | show_cmd | 
+command : ( open_cmd | close_cmd | write_cmd | exit_cmd | show_cmd |
 			create_cmd | update_cmd | insert_cmd | delete_cmd ) ;
 query : relation_name '<-' expr;
 program : { ( query | command ) };
