@@ -3,6 +3,15 @@
  */
 grammar Hello;
 
+// LEXER RULES
+OP : '=='| '!=' | '<' | '>' | '<=' | '>='; 
+ALPHA : ( 'a' .. 'z' | 'A' .. 'Z' | '_');
+DIGIT: '0'..'9';  
+INTEGER : DIGIT { DIGIT };
+IDENTIFIER : ALPHA { ( ALPHA | DIGIT ) };
+STRING_LITERAL : ( ALPHA | DIGIT )+;
+WS : [ \t\r\n]+ -> skip ;
+
 // PARSER RULES
 
 // BATCH 1
