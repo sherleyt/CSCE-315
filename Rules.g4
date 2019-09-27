@@ -34,7 +34,6 @@ difference   : atomic_expr '-' atomic_expr;
 product      : atomic_expr '*' atomic_expr;
 natural_join : atomic_expr '&' atomic_expr;
 
-
 // BATCH 4
 show_cmd : 'SHOW' atomic_expr;
 create_cmd : 'CREATE TABLE' relation_name ( typed_attribute_list ) 
