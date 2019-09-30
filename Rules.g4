@@ -29,16 +29,23 @@ write_cmd : 'WRITE' relation_name ;
 exit_cmd : 'EXIT';
 
 // BATCH 2
+condition:
+    comparison
+    | condition LOGICAL_AND condition
+    | condition LOGICAL_OR condition;
+comparison: operand (OP operand)?;
 
-condition : <assoc=right> conjunction ( '||' conjunction )*;     //Check inside <>
-conjunction : comparison ( '&&' comparison )*;
-comparison: operand OP operand | condition;                     //CHECK LATER IF NEEDED
+LOGICAL_OR: '||';
+LOGICAL_AND: '&&';
+//condition :comparison | conjunction ( '||' conjunction )*;     //Check inside <>
+//conjunction : comparison ( '&&' comparison )*;
+//comparison: operand (OP operand)? | condition;                     //CHECK LATER IF NEEDED
 
 // BATCH 3
 
 expr         : atomic_expr | selection | projection | renaming | union | difference | product | natural_join;
 atomic_expr  : relation_name | '('expr')';
-selection    : 'select' '('(conjunction '(' '||' conjunction ')')*')' atomic_expr;  //CHECK LATER IF NEEDED
+selection    : 'select' '('(condition '(' '||' condition ')')*')' atomic_expr;  //CHECK LATER IF NEEDED
 projection   : 'project' '('attribute_list')' atomic_expr;
 renaming     : 'rename' '('attribute_list')' atomic_expr;
 union        : atomic_expr '+' atomic_expr;
@@ -64,4 +71,3 @@ command : ( open_cmd | close_cmd | write_cmd | exit_cmd | show_cmd |
 			create_cmd | update_cmd | insert_cmd | delete_cmd ) ;
 query : relation_name '<-' expr;
 program : (  query | command  )*;
-
