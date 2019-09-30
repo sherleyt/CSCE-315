@@ -30,7 +30,7 @@ exit_cmd : 'EXIT';
 
 // BATCH 2
 
-condition : conjunction ( '||' conjunction )*;
+condition : <assoc=right> conjunction ( '||' conjunction )*;     //Check inside <>
 conjunction : comparison ( '&&' comparison )*;
 comparison: operand OP operand | condition;                     //CHECK LATER IF NEEDED
 
