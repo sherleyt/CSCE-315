@@ -1,5 +1,7 @@
 package project1;
 
+import org.antlr.v4.runtime.tree.*;
+
 import java.util.*;
 
 public class Table {
@@ -61,5 +63,11 @@ public class Table {
     public String getDataType(String columnName){
         return columnDataTypes.get(columnName);
     }
-    public 
+    public HashSet<Hashtable<String,Object>> getEntries(){
+        return entries;
+    }
+    public HashSet<Hashtable<String,Object>> getEntries(List<ParseTree> condition){
+        //Check condition
+        return entries;
+    }
 }
