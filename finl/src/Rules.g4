@@ -29,10 +29,15 @@ write_cmd : 'WRITE' relation_name ;
 exit_cmd : 'EXIT';
 
 // BATCH 2
+
 condition:
-    comparison
-    | condition LOGICAL_AND condition
-    | condition LOGICAL_OR condition;
+    condition LOGICAL_AND condition
+    | '(' condition LOGICAL_AND condition ')'
+    | condition LOGICAL_OR condition
+    | '(' condition LOGICAL_OR condition ')'
+    | comparison
+    | '(' comparison ')';
+
 comparison: operand (OP operand)?;
 
 LOGICAL_OR: '||';
