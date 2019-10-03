@@ -19,4 +19,12 @@ public class Dbms {
 
         return true;
     }
+
+    public void printer(String name){
+        tables.get(name).printer();
+    }
+
+    public Table GetTable(String name){
+        return tables.get(name);
+    }
 }
