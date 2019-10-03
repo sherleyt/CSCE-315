@@ -13,6 +13,10 @@ public class MyRulesBaseListener extends RulesBaseListener {
         myDbms = new Dbms();
     }
 
+    public boolean evaluateConditional(List<ParseTree> condition){
+        return false;
+    }
+
     @Override public void exitCreate_cmd(RulesParser.Create_cmdContext ctx) {
 
         String tableName = ctx.children.get(1).getText();
@@ -23,6 +27,19 @@ public class MyRulesBaseListener extends RulesBaseListener {
         }
         myDbms.AddTable(tableName,table);
 
+    }
+    @Override public void exitInsert_cmd(RulesParser.Insert_cmdContext ctx) {
+        Table table = myDbms.GetTable(ctx.children.get(1).getText());
+
+        if (ctx.children.get(2).getText().equals("VALUES FROM")){
+            //Values from
+            for (int i = 4; i < ctx.children.size() ; i=i+2){
+                table.AddEntry(ctx.children.get(i).getText());
+            }
+
+        } else if (ctx.children.get(2).getText().equals("VALUES FROM RELATION")) {
+            //Values from relation
+        }
     }
 
 
