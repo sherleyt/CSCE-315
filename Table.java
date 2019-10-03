@@ -18,5 +18,23 @@ public class Table{
 			
 		}
 	}
+	public void printer(){
+        int i = 0;
+        for(Hashtable<String,Object> temp : entries){
+        //for(int i=0;i<entries.size();i++){
+            //System.out.println(columnNames.get(i) + "    ");
+            //entry.get(columnNames.get(i))
+            System.out.println("Entry"+i+":");
+            for(int j = 0; j<columnNames.size();j++){
+                String Column_print = columnNames.get(j);
+
+                System.out.print(Column_print+ ":"+temp.get(Column_print)+ " ");
+            }
+            ++i;
+        }
+       // for(int i=0; i<entries.size();i++){
+
+
+    	}
 	
 }
