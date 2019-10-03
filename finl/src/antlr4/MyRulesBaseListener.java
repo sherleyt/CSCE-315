@@ -25,16 +25,25 @@ public class MyRulesBaseListener extends RulesBaseListener {
             table.AddColumn(ctx.children.get(3).getChild(i).getText(),
                         ctx.children.get(3).getChild(i+1).getText());
         }
+
+        for (int i = 0; i < ctx.children.get(7).getChildCount(); i = i + 2){
+            table.AddPrimaryKey(ctx.children.get(7).getChild(i).getText());
+        }
+
+
         myDbms.AddTable(tableName,table);
 
     }
     @Override public void exitInsert_cmd(RulesParser.Insert_cmdContext ctx) {
         Table table = myDbms.GetTable(ctx.children.get(1).getText());
-
         if (ctx.children.get(2).getText().equals("VALUES FROM")){
             //Values from
+            List<Object> data = new ArrayList<>();
             for (int i = 4; i < ctx.children.size() ; i=i+2){
-                table.AddEntry(ctx.children.get(i).getText());
+                data.add(ctx.children.get(i).getText()); // Maybe evaluate data type
+            }
+            if (!table.AddEntry(data)){
+                System.err.println(data.toString() + " couldn't be added!");
             }
 
         } else if (ctx.children.get(2).getText().equals("VALUES FROM RELATION")) {
@@ -44,7 +53,9 @@ public class MyRulesBaseListener extends RulesBaseListener {
 
 
     @Override public void exitShow_cmd(RulesParser.Show_cmdContext ctx) {
-        System.out.println("SHOW");
+        String tableNam = ctx.children.get(1).getChild(0).getText();
+        System.out.println("Printing table: " + tableNam);
+        myDbms.printer(tableNam);
     }
 
 }
