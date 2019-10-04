@@ -75,7 +75,7 @@ public class Table {
     public HashSet<Hashtable<String,Object>> getEntries(){
         return entries;
     }
-    public void Printer(){
+    public void Print(){
         int i = 0;
         for(Hashtable<String,Object> temp : entries){
             System.out.print("Entry ["+i+"]: ");
