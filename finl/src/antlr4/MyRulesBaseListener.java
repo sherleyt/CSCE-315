@@ -1,6 +1,4 @@
 package project1.antlr4;
-import org.antlr.v4.runtime.ParserRuleContext;
-import org.antlr.v4.runtime.RuleContext;
 import project1.*;
 
 import org.antlr.v4.runtime.tree.*;
@@ -11,7 +9,7 @@ import java.util.*;
 public class MyRulesBaseListener extends RulesBaseListener {
 
     Dbms myDbms;
-    enum dataType {String, Integer, Column};
+    enum dataType {String, Integer, Column, Boolean};
 
     public MyRulesBaseListener() {
         myDbms = new Dbms();
@@ -30,14 +28,16 @@ public class MyRulesBaseListener extends RulesBaseListener {
            return dataType.String;
         } else if (input.matches("[0-9]+")){
             return dataType.Integer;
+        } else  if (input.toLowerCase().equals("true") || input.toLowerCase().equals("false")){
+            return dataType.Boolean;
         } else {
             return dataType.Column;
         }
     }
 
-    public boolean FilterTable(Table context, ParseTree condition){
+    public boolean FilterTableSelection(Table context, ParseTree condition){
         Stack<String> operators = new Stack<>();
-        Queue<String> expression = new LinkedList<>();
+        List<String> expression = new ArrayList<>();
         Hashtable<String,Integer> values = new Hashtable<>();
         values.put("&&",2);
         values.put("||",2);
@@ -48,6 +48,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
         values.put("<",1);
         values.put("!=",1);
 
+        //Construct expression
         List<String> text = new ArrayList<String>();
         getDeepText(text, condition);
         //System.out.println(text.toString()); //Outputs individual elements
@@ -55,8 +56,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
             String input = text.get(i);
             if (values.keySet().contains(input)){
                 if (operators.size() > 0){
-                    if (values.get(operators.peek()) > values.get(input)){
-                        System.out.println("Help");
+                    if (values.get(operators.peek()) < values.get(input)){
                         expression.add(operators.pop());
                     }
                 }
@@ -72,21 +72,20 @@ public class MyRulesBaseListener extends RulesBaseListener {
         }
         //System.out.println(expression.toString()); //Output expression
 
+        //Parse expression for every entry and remove non-compliant ones
         HashSet<Hashtable<String,Object>> entriesToRemove = new HashSet<>();
         for(Hashtable<String,Object> entry: context.getEntries()){
-            Queue<String> expressionCopy = new LinkedList<>(expression);
-            //System.out.println(expressionCopy.toString()); //Used to debug initial list;
             Stack<Object> attributes = new Stack<>();
 
-            while (!expressionCopy.isEmpty()){
-                if (values.keySet().contains(expressionCopy.peek())){
+            for (int i = 0; i < expression.size(); i++){
+                if (values.keySet().contains(expression.get(i))){
 
                     boolean evaluation = false;
-                    String operator = expressionCopy.poll();
-                    if (attributes.get(0) instanceof String && attributes.get(1) instanceof String){
+                    String operator = expression.get(i);
+                    if (attributes.get(attributes.size()-1) instanceof String && attributes.get(attributes.size()-2) instanceof String){
                         //String comparison
-                        String operand1 = (String)attributes.pop();
                         String operand2 = (String)attributes.pop();
+                        String operand1 = (String)attributes.pop();
                         switch(operator){
                             case "==":
                                 evaluation = operand1.equals(operand2);
@@ -100,10 +99,10 @@ public class MyRulesBaseListener extends RulesBaseListener {
                         }
 
                     }
-                    else if (attributes.get(0) instanceof Integer && attributes.get(1) instanceof Integer){
+                    else if (attributes.get(attributes.size()-1) instanceof Integer && attributes.get(attributes.size()-2) instanceof Integer){
                         //String comparison
-                        int operand1 = (int)attributes.pop();
                         int operand2 = (int)attributes.pop();
+                        int operand1 = (int)attributes.pop();
 
                         switch(operator){
                             case "==":
@@ -130,10 +129,10 @@ public class MyRulesBaseListener extends RulesBaseListener {
                         }
 
                     }
-                    else if (attributes.get(0) instanceof Boolean && attributes.get(1) instanceof Boolean){
+                    else if (attributes.get(attributes.size()-1) instanceof Boolean && attributes.get(attributes.size()-2) instanceof Boolean){
                         //String comparison
-                        boolean operand1 = (boolean)attributes.pop();
                         boolean operand2 = (boolean)attributes.pop();
+                        boolean operand1 = (boolean)attributes.pop();
 
                         switch(operator){
                             case "&&":
@@ -155,11 +154,11 @@ public class MyRulesBaseListener extends RulesBaseListener {
 
                     }
                     else {
-                        System.err.println("Trying to compare different or unsupported types: " + attributes.pop().toString() + " " + attributes.pop());
+                        System.err.println("Trying to compare different or unsupported types: " + attributes.pop().toString() + " " + attributes.pop().toString());
                     }
                     attributes.push(evaluation);
                 } else {
-                    String input = expressionCopy.poll();
+                    String input = expression.get(i);
                     switch (ParseType(input)){
                         case String:
                             attributes.push(input.substring(1,input.length()-1));
@@ -167,23 +166,31 @@ public class MyRulesBaseListener extends RulesBaseListener {
                         case Integer:
                             attributes.push(Integer.parseInt(input));
                             break;
+                        case Boolean:
+                            if (input.toLowerCase().equals("true"))
+                                attributes.push(true);
+                            else if (input.toLowerCase().equals("false"))
+                                attributes.push(false);
+                            break;
                         case Column:
                             if (entry.get(input) != null){
                                 attributes.push(entry.get(input));
                             } else {
-                                System.err.println("Entry can't find data for column: " + input);
+                                System.err.println("Warning: An Entry couldn't find data for column: " + input);
+                                System.err.println("Substituting with empty string");
+                                attributes.push("");
                             }
                         default:
                             break;
                     }
                 }
-                //System.out.println(expressionCopy.toString() + attributes.toString()); //Output expressionCopy after modification
+                //System.out.println(expression.get(i) + " " + attributes.toString()); //Output expressionCopy after modification
             }
-            if (attributes.peek() instanceof Boolean){
+            if (attributes.peek() instanceof Boolean && attributes.size() == 1){
                 if (!(Boolean)attributes.peek()) {
                     entriesToRemove.add(entry);
                 }
-            } else System.err.println(attributes.toString());
+            } else System.err.println("Equation format unsupported. Missing operators comparators/operators:\n"+attributes.toString());
         }
         for(Hashtable<String,Object> entry : entriesToRemove)
             context.getEntries().remove(entry);
@@ -191,16 +198,54 @@ public class MyRulesBaseListener extends RulesBaseListener {
         //context.Print(); //Used to debug what entries are left
         return true;
     }
-    public Table getTableFromExpr(ParseTree atomic_expr){
-        Table table = new Table();
+    public boolean FilterTableProjection(Table context, ParseTree attributeList){
+        return true;
+    }
+    public boolean EditTableRename(Table context, ParseTree attributeList){
+        return true;
+    }
+    public boolean TableMathUnion(Table context, Table table1, Table table2){
+        return true;
+    }
+    public boolean TableMathsDiff(Table context, Table table1, Table table2){
+        return true;
+    }
+    public boolean TableMathProd(Table context, Table table1, Table table2){
+        return true;
+    }
+    public boolean TableMathNat_Join(Table context, Table table1, Table table2){
+        return true;
+    }
+
+    public Table getTableFromAtomicExpr(ParseTree atomic_expr){
+        Table table;
         //I'm sorry this is so hacky
         if (atomic_expr.getChildCount() == 1){
-            //Is a relation
             table = myDbms.getTable(atomic_expr.getChild(0).getText());
         } else {
-            //Is multipart
+            table = getTableFromExpr(atomic_expr.getChild(1));
         }
 
+        return table;
+    }
+    public Table getTableFromExpr(ParseTree expr){
+        Table table;
+        expr = expr.getChild(0);
+        if (expr instanceof RulesParser.Atomic_exprContext){
+            table = getTableFromAtomicExpr(expr);
+        }else if (expr instanceof RulesParser.SelectionContext){
+            table = new Table(getTableFromAtomicExpr(expr.getChild(4)));
+            FilterTableSelection(table, expr.getChild(2));
+        } else if (expr instanceof RulesParser.ProjectionContext){
+            table = new Table(getTableFromAtomicExpr(expr.getChild(4)));
+            FilterTableProjection(table, expr.getChild(2));
+        } else if (expr instanceof RulesParser.RenamingContext){
+            table = new Table(getTableFromAtomicExpr(expr.getChild(4)));
+            EditTableRename(table, expr.getChild(2));
+        } else {
+            System.err.println("Could not parse expression! Returning empty table!");
+            table = new Table();
+        }
         return table;
     }
 
@@ -216,7 +261,6 @@ public class MyRulesBaseListener extends RulesBaseListener {
         for (int i = 0; i < ctx.children.get(7).getChildCount(); i = i + 2){
             table.AddPrimaryKey(ctx.children.get(7).getChild(i).getText());
         }
-
 
         myDbms.AddTable(tableName,table);
 
@@ -250,21 +294,22 @@ public class MyRulesBaseListener extends RulesBaseListener {
             //Values from relation
         }
     }
+    @Override public void exitUpdate_cmd(RulesParser.Update_cmdContext ctx) {
+
+    }
+    @Override public void exitDelete_cmd(RulesParser.Delete_cmdContext ctx) {
+
+    }
+
 
     @Override public void exitShow_cmd(RulesParser.Show_cmdContext ctx) {
         String tableNam = ctx.children.get(1).getChild(0).getText();
         System.out.println("Printing table: " + tableNam);
         myDbms.PrintTable(tableNam);
     }
-
-    @Override public void exitSelection(RulesParser.SelectionContext ctx) {
-        myDbms.ClearSelect();
-
-        Table context = getTableFromExpr(ctx.children.get(4));
-        //System.out.println(ctx.children.get(2).getChildCount());
-        FilterTable(context, ctx.children.get(2));
-        //System.out.println(ctx.getRuleContext().getChild(1).getText());
-        myDbms.setSelect(context);
+    @Override public void exitQuery(RulesParser.QueryContext ctx) {
+        String tableName = ctx.getChild(0).getText();
+        myDbms.AddTable(tableName,getTableFromExpr(ctx.getChild(2)));
     }
 
 
