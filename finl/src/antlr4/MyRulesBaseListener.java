@@ -244,7 +244,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
             EditTableRename(table, expr.getChild(2));
         } else {
             System.err.println("Could not parse expression! Returning empty table!");
-            table = new Table();
+            table = new Table("EMPTY");
         }
         return table;
     }
@@ -252,7 +252,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
     @Override public void exitCreate_cmd(RulesParser.Create_cmdContext ctx) {
 
         String tableName = ctx.children.get(1).getText();
-        Table table = new Table();
+        Table table = new Table(tableName);
         for (int i = 0; i+1 < ctx.children.get(3).getChildCount(); i = i + 3){
             table.AddColumn(ctx.children.get(3).getChild(i).getText(),
                         ctx.children.get(3).getChild(i+1).getText());
@@ -292,6 +292,8 @@ public class MyRulesBaseListener extends RulesBaseListener {
 
         } else if (ctx.children.get(2).getText().equals("VALUES FROM RELATION")) {
             //Values from relation
+            table = getTableFromExpr(ctx.getChild(3));
+            //FINISH THIS
         }
     }
     @Override public void exitUpdate_cmd(RulesParser.Update_cmdContext ctx) {
@@ -300,12 +302,24 @@ public class MyRulesBaseListener extends RulesBaseListener {
     @Override public void exitDelete_cmd(RulesParser.Delete_cmdContext ctx) {
 
     }
+    @Override public void exitOpen_cmd(RulesParser.Open_cmdContext ctx) {
+
+    }
+    @Override public void exitClose_cmd(RulesParser.Close_cmdContext ctx) {
+
+    }
+    @Override public void exitWrite_cmd(RulesParser.Write_cmdContext ctx) {
+
+    }
+    @Override public void exitExit_cmd(RulesParser.Exit_cmdContext ctx) {
+
+    }
 
 
     @Override public void exitShow_cmd(RulesParser.Show_cmdContext ctx) {
-        String tableNam = ctx.children.get(1).getChild(0).getText();
-        System.out.println("Printing table: " + tableNam);
-        myDbms.PrintTable(tableNam);
+        Table table = getTableFromAtomicExpr(ctx.children.get(1));
+        System.out.println("Printing table: " + table.getName());
+        table.Print();
     }
     @Override public void exitQuery(RulesParser.QueryContext ctx) {
         String tableName = ctx.getChild(0).getText();
