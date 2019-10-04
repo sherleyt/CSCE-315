@@ -35,7 +35,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
         }
     }
 
-    public boolean FilterTableSelection(Table context, ParseTree condition){
+    private boolean FilterTableSelection(Table context, ParseTree condition){
         Stack<String> operators = new Stack<>();
         List<String> expression = new ArrayList<>();
         Hashtable<String,Integer> values = new Hashtable<>();
@@ -80,6 +80,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
             for (int i = 0; i < expression.size(); i++){
                 if (values.keySet().contains(expression.get(i))){
 
+                    //If an operation, pull 2 values from the stack and evaluate/compare them
                     boolean evaluation = false;
                     String operator = expression.get(i);
                     if (attributes.get(attributes.size()-1) instanceof String && attributes.get(attributes.size()-2) instanceof String){
@@ -158,6 +159,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
                     }
                     attributes.push(evaluation);
                 } else {
+                    //If not an operation, check if the value is a string, integer, boolean, or data from the entry
                     String input = expression.get(i);
                     switch (ParseType(input)){
                         case String:
@@ -181,6 +183,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
                                 attributes.push("");
                             }
                         default:
+                            //Should never evaluate to this as Column is catch-all
                             break;
                     }
                 }
@@ -198,16 +201,95 @@ public class MyRulesBaseListener extends RulesBaseListener {
         //context.Print(); //Used to debug what entries are left
         return true;
     }
-    public boolean FilterTableProjection(Table context, ParseTree attributeList){
+    private boolean FilterTableProjection(Table context, ParseTree attributeList){
+        HashSet<String> attributes = new HashSet<>();
+        for (int i = 0; i < attributeList.getChildCount(); i=i+2){
+            attributes.add(attributeList.getChild(i).getText());
+        }
+        List<String> columnsToRemove = new ArrayList<>();
+        for (String columnName : context.getColumnsNames()){
+            if (!attributes.contains(columnName))  columnsToRemove.add(columnName);
+        }
+
+        for (String columnName: columnsToRemove){
+            HashSet<Hashtable<String,Object>> entriesToRemove = new HashSet<>();
+            //Remove data from entries, remove entries if they are empty.
+            for(Hashtable<String,Object> entry: context.getEntries()){
+                entry.remove(columnName);
+                if (entry.keySet().isEmpty()){
+                    entriesToRemove.add(entry);
+                    System.err.println("Warning: Projection removed entry (No Data)!");
+                }
+            }
+            for (Hashtable<String,Object> entry:entriesToRemove){
+                context.getEntries().remove(entry);
+            }
+            //Finally, remove column from keys, columns, and datatype information
+            context.getPrimaryKeys().remove(columnName);
+            if (context.getPrimaryKeys().size() <= 0) System.err.println("Warning: Projection removed all primary keys! (Can't add entries without primary keys)");
+            context.getColumnsNames().remove(columnName);
+            context.getDataTypes().remove(columnName);
+        }
         return true;
     }
-    public boolean EditTableRename(Table context, ParseTree attributeList){
+    public boolean EditTableRenameColumn(Table context, ParseTree attributeList){
+        List<String> attributes = new ArrayList<>();
+        for (int i = 0; i < attributeList.getChildCount(); i=i+2){
+            attributes.add(attributeList.getChild(i).getText());
+        }
+        for (int i = 0; i < attributes.size() && i < context.getColumnsNames().size(); i++){
+            for (Hashtable<String,Object> entry: context.getEntries()){
+                entry.put(attributes.get(i),entry.get(context.getColumnsNames().get(i)));
+                entry.remove(context.getColumnsNames().get(i));
+            }
+            context.getDataTypes().put(attributes.get(i), context.getDataTypes().get(context.getColumnsNames().get(i)));
+            context.getDataTypes().remove(context.getColumnsNames().get(i));
+
+            context.getColumnsNames().set(i,attributes.get(i));
+        }
         return true;
     }
     public boolean TableMathUnion(Table context, Table table1, Table table2){
+        List<String> columnNames = new ArrayList<>();
+
+        //Inherits order from table1
+        //Adds column to context if Name and Datatype are the same.
+        //I know this is gross... don't @ me
+        for (int i = 0; i< table1.getColumnsNames().size(); i++){
+            String columnName = table1.getColumnsNames().get(i);
+            if (table2.getColumnsNames().contains(columnName)){
+                if (table1.getDataTypes().get(columnName).equals(table2.getDataTypes().get(columnName))){
+                    columnNames.add(columnName);
+                    context.AddColumn(columnName,table1.getDataTypes().get(columnName));
+                    //Add column as a primary key is it is one in either table1 or table2 (More General)
+                    if (table1.getPrimaryKeys().contains(columnName) || table2.getPrimaryKeys().contains(columnName)){
+                        context.getPrimaryKeys().add(columnName);
+                    }
+                } else {
+                    System.err.println("Warning: Union between [" + table1.getName() + "," + table2.getName()+"] of Column: ["+columnName+"] failed. (Different datatypes)");
+                }
+            }
+        }
+
+        //Only Entries if they actually have data in at least one columns
+        for (Hashtable<String,Object> entry: table1.getEntries()){
+            List<Object> entryValues = new ArrayList<>();
+            for (int i = 0;i < columnNames.size(); i++){
+                entryValues.add(entry.get(columnNames.get(i)));
+            }
+            if (entryValues.size() > 0) context.AddEntry(entryValues);
+        }
+        for (Hashtable<String,Object> entry: table2.getEntries()){
+            List<Object> entryValues = new ArrayList<>();
+            for (int i = 0;i < columnNames.size(); i++){
+                entryValues.add(entry.get(columnNames.get(i)));
+            }
+            if (entryValues.size() > 0) context.AddEntry(entryValues);
+        }
+
         return true;
     }
-    public boolean TableMathsDiff(Table context, Table table1, Table table2){
+    public boolean TableMathDiff(Table context, Table table1, Table table2){
         return true;
     }
     public boolean TableMathProd(Table context, Table table1, Table table2){
@@ -241,7 +323,27 @@ public class MyRulesBaseListener extends RulesBaseListener {
             FilterTableProjection(table, expr.getChild(2));
         } else if (expr instanceof RulesParser.RenamingContext){
             table = new Table(getTableFromAtomicExpr(expr.getChild(4)));
-            EditTableRename(table, expr.getChild(2));
+            EditTableRenameColumn(table, expr.getChild(2));
+        } else if (expr instanceof RulesParser.UnionContext){
+            Table table1 = getTableFromAtomicExpr(expr.getChild(0));
+            Table table2 = getTableFromAtomicExpr(expr.getChild(2));
+            table = new Table(table1.getName() + "+" + table2.getName());
+            TableMathUnion(table, table1, table2);
+        } else if (expr instanceof RulesParser.DifferenceContext){
+            Table table1 = getTableFromAtomicExpr(expr.getChild(0));
+            Table table2 = getTableFromAtomicExpr(expr.getChild(2));
+            table = new Table(table1.getName() + "-" + table2.getName());
+            TableMathDiff(table, table1, table2);
+        } else if (expr instanceof RulesParser.ProductContext){
+            Table table1 = getTableFromAtomicExpr(expr.getChild(0));
+            Table table2 = getTableFromAtomicExpr(expr.getChild(2));
+            table = new Table(table1.getName() + "*" + table2.getName());
+            TableMathProd(table, table1, table2);
+        } else if (expr instanceof RulesParser.Natural_joinContext){
+            Table table1 = getTableFromAtomicExpr(expr.getChild(0));
+            Table table2 = getTableFromAtomicExpr(expr.getChild(2));
+            table = new Table(table1.getName() + "&" + table2.getName());
+            TableMathNat_Join(table, table1, table2);
         } else {
             System.err.println("Could not parse expression! Returning empty table!");
             table = new Table("EMPTY");
@@ -318,12 +420,13 @@ public class MyRulesBaseListener extends RulesBaseListener {
 
     @Override public void exitShow_cmd(RulesParser.Show_cmdContext ctx) {
         Table table = getTableFromAtomicExpr(ctx.children.get(1));
-        System.out.println("Printing table: " + table.getName());
         table.Print();
     }
     @Override public void exitQuery(RulesParser.QueryContext ctx) {
         String tableName = ctx.getChild(0).getText();
-        myDbms.AddTable(tableName,getTableFromExpr(ctx.getChild(2)));
+        Table table = getTableFromExpr(ctx.getChild(2));
+        table.setName(tableName);
+        myDbms.AddTable(tableName,table);
     }
 
 
