@@ -5,15 +5,24 @@ import java.util.*;
 public class Table {
     private List<String> columnNames; //Name
     private Hashtable<String,String> columnDataTypes; // DataType
-    private List<String> primaryKeys; //Which Names are Primary Keys
+    private HashSet<String> primaryKeys; //Which Names are Primary Keys
     private HashSet<Hashtable<String,Object>> entries; //List of Column-Data
 
 
     public Table(){
         columnNames = new ArrayList<>();
         columnDataTypes = new Hashtable<>();
-        primaryKeys = new ArrayList<>();
+        primaryKeys = new HashSet<>();
         entries = new HashSet<>();
+    }
+    public Table(Table copy){
+        columnNames = new ArrayList<>(copy.getColumnsNames());
+        columnDataTypes = new Hashtable<>(copy.getDataTypes());
+        primaryKeys = new HashSet<>(copy.getPrimaryKeys());
+        entries = new HashSet<>();
+        for (Hashtable<String,Object> entry: copy.getEntries()) {
+            entries.add(new Hashtable<>(entry));
+        }
     }
 
     public boolean AddColumn(String name, String dataType){
@@ -69,8 +78,11 @@ public class Table {
     public List<String> getColumnsNames(){
         return columnNames;
     }
-    public String getDataType(String columnName){
-        return columnDataTypes.get(columnName);
+    public Hashtable<String,String> getDataTypes(){
+        return columnDataTypes;
+    }
+    public Set<String> getPrimaryKeys(){
+        return primaryKeys;
     }
     public HashSet<Hashtable<String,Object>> getEntries(){
         return entries;
@@ -78,10 +90,10 @@ public class Table {
     public void Print(){
         int i = 0;
         for(Hashtable<String,Object> temp : entries){
-            System.out.print("Entry ["+i+"]: ");
+            System.out.printf("%-15s","Entry ["+i+"]: ");
             for(int j = 0; j<columnNames.size();j++){
                 String Column_print = columnNames.get(j);
-                System.out.print(Column_print+ "="+temp.get(Column_print)+ ", ");
+                System.out.printf("%-20s",Column_print+ "="+temp.get(Column_print)+ ",");
             }
             ++i;
             System.out.println("");
