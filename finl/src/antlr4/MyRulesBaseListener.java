@@ -17,6 +17,14 @@ public class MyRulesBaseListener extends RulesBaseListener {
         myDbms = new Dbms();
     }
 
+    public void getDeepText(List<String> text, ParseTree tree){
+        if (tree.getChildCount() > 0){
+            for (int i = 0; i < tree.getChildCount(); i++) {
+                getDeepText(text, tree.getChild(i));
+            }
+        } else text.add(tree.getText());
+    }
+
     public dataType ParseType(String input){
         if (input.charAt(0) == '"' && input.charAt(input.length()-1) == '"'){
            return dataType.String;
@@ -29,79 +37,129 @@ public class MyRulesBaseListener extends RulesBaseListener {
 
     public boolean FilterTable(Table context, ParseTree condition){
         Stack<String> operators = new Stack<>();
-        Queue<String> expression = new PriorityQueue<>();
+        Queue<String> expression = new LinkedList<>();
         Hashtable<String,Integer> values = new Hashtable<>();
-        values.put("&&",1);
-        values.put("||",1);
-        values.put("==",2);
-        values.put(">=",2);
-        values.put("<=",2);
-        values.put(">",2);
-        values.put("<",2);
-        values.put("!=",2);
+        values.put("&&",2);
+        values.put("||",2);
+        values.put("==",1);
+        values.put(">=",1);
+        values.put("<=",1);
+        values.put(">",1);
+        values.put("<",1);
+        values.put("!=",1);
 
-        System.out.println(condition.getChildCount());
-        for (int i = 0; i < condition.getChildCount(); i++){
-            String input = condition.getChild(i).getText();
+        List<String> text = new ArrayList<String>();
+        getDeepText(text, condition);
+        //System.out.println(text.toString()); //Outputs individual elements
+        for (int i = 0; i < text.size(); i++){
+            String input = text.get(i);
             if (values.keySet().contains(input)){
-                if (values.get(operators.peek()) > values.get(input))
-                    expression.add(operators.pop());
+                if (operators.size() > 0){
+                    if (values.get(operators.peek()) > values.get(input)){
+                        System.out.println("Help");
+                        expression.add(operators.pop());
+                    }
+                }
                 operators.push(input);
-            } else if (!input.equals("(") && !input.equals(")")){
+            } else if (input.equals(")") && operators.size()>0) {
+                expression.add(operators.pop());
+            } else if (!input.equals("(") && !input.equals(")")) {
                 expression.add(input);
             }
         }
         while (!operators.isEmpty()){
             expression.add(operators.pop());
         }
+        //System.out.println(expression.toString()); //Output expression
 
+        HashSet<Hashtable<String,Object>> entriesToRemove = new HashSet<>();
         for(Hashtable<String,Object> entry: context.getEntries()){
-
+            Queue<String> expressionCopy = new LinkedList<>(expression);
+            //System.out.println(expressionCopy.toString()); //Used to debug initial list;
             Stack<Object> attributes = new Stack<>();
 
-            while (!expression.isEmpty()){
-                if (values.keySet().contains(expression.peek())){
+            while (!expressionCopy.isEmpty()){
+                if (values.keySet().contains(expressionCopy.peek())){
 
                     boolean evaluation = false;
-                    switch(expression.poll()){
-                        case "==":
-                            if (attributes.peek() instanceof String) {
-                                evaluation = (attributes.pop().equals(attributes.pop()));
-                            } else {
-                                evaluation = (attributes.pop() == attributes.pop());
-                            }
-                            break;
-                        case "!=":
-                            if (attributes.peek() instanceof String) {
-                                evaluation = !(attributes.pop().equals(attributes.pop()));
-                            } else {
-                                evaluation = !(attributes.pop() == attributes.pop());
-                            }
-                            break;
-                        case ">=":
-                            evaluation = ((Integer)attributes.pop() >= (Integer)attributes.pop());
-                            break;
-                        case "<=":
-                            evaluation = ((Integer)attributes.pop() <= (Integer)attributes.pop());
-                            break;
-                        case ">":
-                            evaluation = ((Integer)attributes.pop() > (Integer)attributes.pop());
-                            break;
-                        case "<":
-                            evaluation = ((Integer)attributes.pop() < (Integer)attributes.pop());
-                            break;
-                        case "&&":
-                            evaluation = ((Boolean)attributes.pop() && (Boolean)attributes.pop());
-                            break;
-                        case "||":
-                            evaluation = ((Boolean)attributes.pop() || (Boolean)attributes.pop());
-                            break;
-                        default:
-                            break;
+                    String operator = expressionCopy.poll();
+                    if (attributes.get(0) instanceof String && attributes.get(1) instanceof String){
+                        //String comparison
+                        String operand1 = (String)attributes.pop();
+                        String operand2 = (String)attributes.pop();
+                        switch(operator){
+                            case "==":
+                                evaluation = operand1.equals(operand2);
+                                break;
+                            case "!=":
+                                evaluation = !operand1.equals(operand2);
+                                break;
+                            default:
+                                System.err.println("Trying to compare strings: [" +operand1+", " + operand2 + "] with: " + operator);
+                                break;
+                        }
+
+                    }
+                    else if (attributes.get(0) instanceof Integer && attributes.get(1) instanceof Integer){
+                        //String comparison
+                        int operand1 = (int)attributes.pop();
+                        int operand2 = (int)attributes.pop();
+
+                        switch(operator){
+                            case "==":
+                                evaluation = operand1 == operand2;
+                                break;
+                            case "!=":
+                                evaluation = operand1 != operand2;
+                                break;
+                            case ">=":
+                                evaluation = operand1 >= operand2;
+                                break;
+                            case "<=":
+                                evaluation = operand1 <= operand2;
+                                break;
+                            case ">":
+                                evaluation = operand1 > operand2;
+                                break;
+                            case "<":
+                                evaluation = operand1 < operand2;
+                                break;
+                            default:
+                                System.err.println("Trying to compare integers: [" +operand1+", "+operand2+"] with: "+operator);
+                                break;
+                        }
+
+                    }
+                    else if (attributes.get(0) instanceof Boolean && attributes.get(1) instanceof Boolean){
+                        //String comparison
+                        boolean operand1 = (boolean)attributes.pop();
+                        boolean operand2 = (boolean)attributes.pop();
+
+                        switch(operator){
+                            case "&&":
+                                evaluation = operand1 && operand2;
+                                break;
+                            case "||":
+                                evaluation = operand1 || operand2;
+                                break;
+                            case "==":
+                                evaluation = operand1 == operand2;
+                                break;
+                            case "!=":
+                                evaluation = operand1 != operand2;
+                                break;
+                            default:
+                                System.err.println("Trying to compare booleans: [" +operand1+", "+operand2+"] with: "+operator);
+                                break;
+                        }
+
+                    }
+                    else {
+                        System.err.println("Trying to compare different or unsupported types: " + attributes.pop().toString() + " " + attributes.pop());
                     }
                     attributes.push(evaluation);
                 } else {
-                    String input = expression.poll();
+                    String input = expressionCopy.poll();
                     switch (ParseType(input)){
                         case String:
                             attributes.push(input.substring(1,input.length()-1));
@@ -113,19 +171,24 @@ public class MyRulesBaseListener extends RulesBaseListener {
                             if (entry.get(input) != null){
                                 attributes.push(entry.get(input));
                             } else {
-                                System.err.println("Entry can find data for column: " + input);
+                                System.err.println("Entry can't find data for column: " + input);
                             }
                         default:
                             break;
                     }
                 }
+                //System.out.println(expressionCopy.toString() + attributes.toString()); //Output expressionCopy after modification
             }
             if (attributes.peek() instanceof Boolean){
                 if (!(Boolean)attributes.peek()) {
-                    context.getEntries().remove(entry);
+                    entriesToRemove.add(entry);
                 }
             } else System.err.println(attributes.toString());
         }
+        for(Hashtable<String,Object> entry : entriesToRemove)
+            context.getEntries().remove(entry);
+
+        //context.Print(); //Used to debug what entries are left
         return true;
     }
     public Table getTableFromExpr(ParseTree atomic_expr){
@@ -198,9 +261,9 @@ public class MyRulesBaseListener extends RulesBaseListener {
         myDbms.ClearSelect();
 
         Table context = getTableFromExpr(ctx.children.get(4));
-        System.out.println(ctx.children.get(2).getChildCount());
+        //System.out.println(ctx.children.get(2).getChildCount());
         FilterTable(context, ctx.children.get(2));
-        System.out.println(ctx.getRuleContext().getChild(1).getText());
+        //System.out.println(ctx.getRuleContext().getChild(1).getText());
         myDbms.setSelect(context);
     }
 
