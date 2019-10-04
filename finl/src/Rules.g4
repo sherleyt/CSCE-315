@@ -32,11 +32,9 @@ exit_cmd : 'EXIT';
 
 condition:
     condition LOGICAL_AND condition
-    | '(' condition LOGICAL_AND condition ')'
     | condition LOGICAL_OR condition
-    | '(' condition LOGICAL_OR condition ')'
     | comparison
-    | '(' comparison ')';
+    | '(' condition ')';
 
 comparison: operand (OP operand)?;
 
@@ -50,7 +48,7 @@ LOGICAL_AND: '&&';
 
 expr         : atomic_expr | selection | projection | renaming | union | difference | product | natural_join;
 atomic_expr  : relation_name | '('expr')';
-selection    : 'select' '('(condition)*')' atomic_expr;  //CHECK LATER IF NEEDED
+selection    : 'select' '('condition')' atomic_expr;  //CHECK LATER IF NEEDED
 projection   : 'project' '('attribute_list')' atomic_expr;
 renaming     : 'rename' '('attribute_list')' atomic_expr;
 union        : atomic_expr '+' atomic_expr;
