@@ -252,7 +252,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
     public boolean TableMathUnion(Table context, Table table1, Table table2){
         List<String> columnNames = new ArrayList<>();
 
-        //Inherits order from table1
+        //Inherits column order from table1
         //Adds column to context if Name and Datatype are the same.
         //I know this is gross... don't @ me
         for (int i = 0; i< table1.getColumnsNames().size(); i++){
@@ -290,6 +290,62 @@ public class MyRulesBaseListener extends RulesBaseListener {
         return true;
     }
     public boolean TableMathDiff(Table context, Table table1, Table table2){
+        List<String> columnNames = new ArrayList<>();
+        for (int i = 0; i< table1.getColumnsNames().size(); i++){
+            String columnName = table1.getColumnsNames().get(i);
+            if (table2.getColumnsNames().contains(columnName)){
+                if (table1.getDataTypes().get(columnName).equals(table2.getDataTypes().get(columnName))){
+                    columnNames.add(columnName);
+                    context.AddColumn(columnName,table1.getDataTypes().get(columnName));
+                    //Add column as a primary key is it is one in either table1 or table2 (More General)
+                    if (table1.getPrimaryKeys().contains(columnName) || table2.getPrimaryKeys().contains(columnName)){
+                        context.getPrimaryKeys().add(columnName);
+                    }
+                } else {
+                    System.err.println("Warning: Difference between [" + table1.getName() + "," + table2.getName()+"] of Column: ["+columnName+"] failed. (Different datatypes)");
+                }
+            }
+        }
+
+        System.out.println(context.getColumnsNames().toString());
+        for (Hashtable<String,Object> entry1: table1.getEntries()){
+            boolean matching = false;
+            for (Hashtable<String,Object> entry2: table2.getEntries()) {
+                matching = true;
+                for (String columnName:columnNames){
+                    if (entry1.get(columnName) != entry2.get(columnName)){
+                        matching = false;
+                    }
+                }
+                if (matching == true) break;
+            }
+            if (!matching){
+                List<Object> entryValues = new ArrayList<>();
+                for (int i = 0;i < columnNames.size(); i++){
+                    entryValues.add(entry1.get(columnNames.get(i)));
+                }
+                if (entryValues.size() > 0) context.AddEntry(entryValues);
+            }
+        }
+        for (Hashtable<String,Object> entry2: table2.getEntries()){
+            boolean matching = false;
+            for (Hashtable<String,Object> entry1: table1.getEntries()) {
+                matching = true;
+                for (String columnName:columnNames){
+                    if (entry1.get(columnName) != entry2.get(columnName)){
+                        matching = false;
+                    }
+                }
+                if (matching == true) break;
+            }
+            if (!matching){
+                List<Object> entryValues = new ArrayList<>();
+                for (int i = 0;i < columnNames.size(); i++){
+                    entryValues.add(entry2.get(columnNames.get(i)));
+                }
+                if (entryValues.size() > 0) context.AddEntry(entryValues);
+            }
+        }
         return true;
     }
     public boolean TableMathProd(Table context, Table table1, Table table2){
@@ -427,7 +483,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
     }
     @Override public void exitQuery(RulesParser.QueryContext ctx) {
         String tableName = ctx.getChild(0).getText();
-        Table table = getTableFromExpr(ctx.getChild(2));
+        Table table = new Table(getTableFromExpr(ctx.getChild(2)));
         table.setName(tableName);
         myDbms.AddTable(tableName,table);
     }
