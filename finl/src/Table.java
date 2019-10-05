@@ -61,6 +61,7 @@ public class Table {
                     matching = false;
             }
             if (matching) {
+                System.err.println("Could not add an entry! (Matching primary keys)");
                 return false;
             }
         }
