@@ -466,11 +466,19 @@ public class MyRulesBaseListener extends RulesBaseListener {
     }
     @Override public void exitClose_cmd(RulesParser.Close_cmdContext ctx) {
         String table = ctx.getChild(1).getText();
-        myDbms.close_table(table);
+        try{
+        myDbms.close_table(table);}
+        catch(Exception e){
+            System.out.println("error closing");
+        }
     }
     @Override public void exitWrite_cmd(RulesParser.Write_cmdContext ctx) {
         String table = ctx.getChild(1).getText();
-        myDbms.write_table(table);
+        try{
+        myDbms.write_table(table);}
+        catch (Exception e){
+            System.out.println("error writing");
+        }
     }
     @Override public void exitExit_cmd(RulesParser.Exit_cmdContext ctx) {
 
