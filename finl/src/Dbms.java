@@ -13,16 +13,12 @@ public class Dbms {
         tables.put(name, table);
 
         //Debugging table adding
-        System.out.print("Added Table \"" + name + "\": ( ");
+        System.out.print("Added Table: " + name + " ( ");
         table.getColumnsNames().forEach((n)->System.out.print(n + "(" + table.getDataTypes().get(n) + "), "));
         System.out.println(")");
 
 
         return true;
-    }
-
-    public void PrintTable(String name){
-        tables.get(name).Print();
     }
 
     public Table getTable(String name){
