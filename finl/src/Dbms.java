@@ -28,7 +28,7 @@ public class Dbms {
 	//-------------------------
     public void open_table(String tablenam){
 		
-        String csvFile = "C:\\Users\\Sebastian Tan\\Desktop\\"+tablenam+".csv";
+        String csvFile = "C:\\Users\\sjpat\\Desktop\\315\\Project"+tablenam+".csv";
         String line = "";
         BufferedReader entry_from_csv = null;
         String split_char = ",";
@@ -109,15 +109,16 @@ public class Dbms {
 		//make temp table to use to write
         Table temp = tables.get(tablenam);
 		//Delete existing file and make new one exactly same way
-        File fold=new File("C:\\Users\\Sebastian Tan\\Desktop\\"+tablenam+".csv");
+        File fold=new File("C:\\Users\\sjpat\\Desktop\\315\\Project\\src\\project1\\"+tablenam+".csv");
         fold.delete();
-        File temp2 = new File("C:\\Users\\Sebastian Tan\\Desktop\\"+tablenam+".csv");
+        File temp2 = new File("C:\\Users\\sjpat\\Desktop\\315\\Project\\src\\project1\\"+tablenam+".csv");
         temp2.createNewFile();
 		
 		//-------------------------
 		//GO LINE BY LINE AND ADD
 		//-------------------------
 		//Make string(using StringBuilder) of primarykeys
+        FileWriter writer = new FileWriter(temp2);
         int i =1; 
         StringBuilder sb = new StringBuilder();
         for(String a:temp.getPrimaryKeys()){ //for-each with primary keys
@@ -134,8 +135,8 @@ public class Dbms {
             }
             ++i;
         }
-        writer.print(sb.toString());
-		
+        writer.append(sb.toString());
+		System.out.print(sb.toString());
 		
 		//Make string(using StringBuilder) of column_names
         i = 1;
@@ -154,8 +155,8 @@ public class Dbms {
             }
             ++i;
         }
-        writer.print(col.toString());
-		
+        writer.append(col.toString());
+		System.out.print(col.toString());
 		//Make string_array of column names(used later to find their types)
         i =0;
         String[] col_names = new String[temp.getColumnsNames().size()]; //should be same size as ColumnNames.size(), because list has an easy size function
@@ -181,8 +182,8 @@ public class Dbms {
                 type.append("\n");
             }
         }
-        writer.print(type.toString());
-
+        writer.append(type.toString());
+        System.out.print(type.toString());
 
         String entry = ""; //Each entry in 1 string, has /n's to get new line at the end
         for(Hashtable<String,Object> entr:temp.getEntries()){
@@ -192,7 +193,10 @@ public class Dbms {
             }
             entry = entry + entr.get(temp.getColumnsNames().get(temp.getColumnsNames().size()-1)) + "\n";
         }
-        writer.print(entry.toString());
+        writer.append(entry.toString());
+        System.out.print(entry.toString());
+        writer.flush();
+        writer.close();
     }
 	
 	//Create/rewrite .csv file of table with current iteration of the table, delete the table from DBMS
@@ -209,10 +213,10 @@ public class Dbms {
     public void close_table(String tablenam)throws java.io.IOException{
         Table temp = tables.get(tablenam); //Table in question
 		//Find the .csv file and delete it
-        File fold=new File("C:\\Users\\Sebastian Tan\\Desktop\\"+tablenam+".csv");
+        File fold=new File("C:\\Users\\sjpat\\Desktop\\315\\Project"+tablenam+".csv");
         fold.delete();
 		//Make new empty file to print current iteration of table
-        File temp2 = new File("C:\\Users\\Sebastian Tan\\Desktop\\"+tablenam+".csv");
+        File temp2 = new File("C:\\Users\\sjpat\\Desktop\\315\\Project"+tablenam+".csv");
         temp2.createNewFile();
 		
 		//Start writing using PrintWriter
@@ -320,4 +324,5 @@ public class Dbms {
         return tables.get(name);
     }
 }
+
 
