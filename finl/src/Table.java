@@ -33,13 +33,17 @@ public class Table {
         }
     }
 
+
+    public boolean DeleteEntry(Hashtable<String,Object> to_del){
+        return (entries.remove(to_del));
+    }
 	//Just adds column names and types
     public boolean AddColumn(String name, String dataType){
 		//Add into column names, after checking if it already exists
         for (String c: columnNames)
             if (c == name)
                 return false;
-
+            //System.out.println(name + dataType);
         columnNames.add(name);
 		
 		//Add to column types (needs column name and its type together)
@@ -51,6 +55,7 @@ public class Table {
 		//Check contained in column names if yes, add them
         if (columnNames.contains(name)){
             primaryKeys.add(name);
+
             return true;
         } else return false;
     }
@@ -80,14 +85,39 @@ public class Table {
         //Check if input matches column datatypes
         //IMPLEMENT THIS
 
+
         //Add entry
-        System.out.printf("%-15s","Added Entry: ");
+        //System.out.printf("%-15s","Added Entry: ");
         Hashtable<String,Object> newEntry = new Hashtable<>();
         for (int i = 0; i < values.size() && i < columnNames.size(); i++){
+
+            //Check if value of new entry matches the datatypes of table
+            String dataType = columnDataTypes.get(columnNames.get(i));
+            //Check if value is integer if supposed to be
+            if(dataType.equals("INTEGER") && !(values.get(i) instanceof Integer)){
+                System.err.println("Tried to insert improper entry datatype");
+                return false;
+            }
+            else if(dataType.contains("VARCHAR")){           //Check if value is string if supposed to be
+                if(!(values.get(i) instanceof String)){
+                    System.err.println("Tried to insert improper entry datatype");
+                    return false;
+                }
+                //Get number from VARCHAR(?)
+                String[] after_paren = dataType.split("[(]");
+                String[] after_paren2 = after_paren[1].split("[)]");
+                int size_check = Integer.parseInt(after_paren2[0]);
+                //Check the size of entry's string, and make sure it matches that specified
+                if(String.valueOf(values.get(i)).length() > size_check){
+                    System.err.println("Tried to insert improper entry datatype");
+                    return false;
+                }
+            }
+
             newEntry.put(columnNames.get(i),values.get(i));
-            System.out.printf("%-15s",columnNames.get(i)+ "="+values.get(i)+ ",");
+           // System.out.printf("%-15s",columnNames.get(i)+ "="+values.get(i)+ ",");
         }
-        System.out.println(" to Table: " + getName());
+    //    System.out.println(" to Table: " + getName());
         entries.add(newEntry);
         return true;
     }
