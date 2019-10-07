@@ -13,6 +13,12 @@ public class Dbms {
 		//make empty hashtable to start
         tables = new Hashtable<>();
     }
+    public boolean delete_table(String tablenam){
+        if(tables.remove(tablenam) == null)
+            return false;
+        else
+            return true;
+    }
 
     //Usage source:https://www.mkyong.com/java/how-to-read-and-parse-csv-file-in-java/
 	//Open file, get the table information and make a new table with that information/name
@@ -28,7 +34,7 @@ public class Dbms {
 	//-------------------------
     public void open_table(String tablenam){
 		
-        String csvFile = "C:\\Users\\sjpat\\Desktop\\315\\Project"+tablenam+".csv";
+        String csvFile = "C:\\Users\\sjpat\\Desktop\\315\\Project\\src\\project1\\"+tablenam+".csv";
         String line = "";
         BufferedReader entry_from_csv = null;
         String split_char = ",";
@@ -78,7 +84,7 @@ public class Dbms {
 					//Else it is just a string
                     else{
                         String temp = "";
-                        temp = "\"" + csv_entry[k] + "\"";  //Added quotes as its syntax of addentry
+                        temp = csv_entry[k];  //Added quotes as its syntax of addentry
                         entr.add(temp);
                     }
                 }
@@ -136,7 +142,6 @@ public class Dbms {
             ++i;
         }
         writer.append(sb.toString());
-		System.out.print(sb.toString());
 		
 		//Make string(using StringBuilder) of column_names
         i = 1;
@@ -156,7 +161,6 @@ public class Dbms {
             ++i;
         }
         writer.append(col.toString());
-		System.out.print(col.toString());
 		//Make string_array of column names(used later to find their types)
         i =0;
         String[] col_names = new String[temp.getColumnsNames().size()]; //should be same size as ColumnNames.size(), because list has an easy size function
@@ -183,8 +187,6 @@ public class Dbms {
             }
         }
         writer.append(type.toString());
-        System.out.print(type.toString());
-
         String entry = ""; //Each entry in 1 string, has /n's to get new line at the end
         for(Hashtable<String,Object> entr:temp.getEntries()){
             for(int k = 0; k<(temp.getColumnsNames().size()-1);k++){
@@ -194,7 +196,6 @@ public class Dbms {
             entry = entry + entr.get(temp.getColumnsNames().get(temp.getColumnsNames().size()-1)) + "\n";
         }
         writer.append(entry.toString());
-        System.out.print(entry.toString());
         writer.flush();
         writer.close();
     }
@@ -212,95 +213,8 @@ public class Dbms {
 	//-------------------------
     public void close_table(String tablenam)throws java.io.IOException{
         Table temp = tables.get(tablenam); //Table in question
-		//Find the .csv file and delete it
-        File fold=new File("C:\\Users\\sjpat\\Desktop\\315\\Project"+tablenam+".csv");
-        fold.delete();
-		//Make new empty file to print current iteration of table
-        File temp2 = new File("C:\\Users\\sjpat\\Desktop\\315\\Project"+tablenam+".csv");
-        temp2.createNewFile();
-		
-		//Start writing using PrintWriter
-        PrintWriter writer = new PrintWriter(temp2);
-		
-		//-------------------------
-		//GO LINE BY LINE AND ADD
-		//-------------------------
-		//Make string(using StringBuilder) of primarykeys
-        int i =1; 
-        StringBuilder sb = new StringBuilder();
-        for(String a:temp.getPrimaryKeys()){ //for-each with primary keys
-
-            sb.append(a);
-			//Check if we need ","(middle) or "\n"(ending)
-            if(i < (temp.getPrimaryKeys().size())) {
-				//middle entry
-                sb.append(",");
-            }
-            else{
-				//ending entry
-                sb.append("\n");
-            }
-            ++i;
-        }
-        writer.print(sb.toString());
-		
-		
-		//Make string(using StringBuilder) of column_names
-        i = 1;
-        StringBuilder col = new StringBuilder();
-        for(String a:temp.getColumnsNames()){ //for-each with column names
-
-            col.append(a);
-			//Check if we need "," or "\n"
-            if(i < (temp.getColumnsNames().size())) {
-				//middle entry
-                col.append(",");
-            }
-            else{
-				//ending entry
-                col.append("\n");
-            }
-            ++i;
-        }
-        writer.print(col.toString());
-		
-		//Make string_array of column names(used later to find their types)
-        i =0;
-        String[] col_names = new String[temp.getColumnsNames().size()]; //should be same size as ColumnNames.size(), because list has an easy size function
-		
-        for(String b:temp.getColumnsNames()){
-            col_names[i] = b;
-            ++i;
-        }
-		
-		// Make Equalivalent hashtable to then search, and insert types (Hastable <col_name> <coltype>), use col_name as key to get coltype
-        StringBuilder type = new StringBuilder();
-        Hashtable<String,String> types = temp.getDataTypes();
-        for(int j = 0; j<temp.getDataTypes().size();j++){
-
-            type.append(types.get(col_names[j]));
-			//Check if we need "," or "\n"
-            if(j < (temp.getDataTypes().size()-1)) {
-				//middle entry
-                type.append(",");
-            }
-            else{
-				//ending entry
-                type.append("\n");
-            }
-        }
-        writer.print(type.toString());
-
-
-        String entry = ""; //Each entry in 1 string, has /n's to get new line at the end
-        for(Hashtable<String,Object> entr:temp.getEntries()){
-            for(int k = 0; k<(temp.getColumnsNames().size()-1);k++){
-                entry = entry + entr.get(temp.getColumnsNames().get(k)) + ",";
-
-            }
-            entry = entry + entr.get(temp.getColumnsNames().get(temp.getColumnsNames().size()-1)) + "\n";
-        }
-        writer.print(entry.toString());
+		//USE the write command from above
+        write_table(tablenam);
 		//Remove from DBMS
         tables.remove(tablenam);
     }
@@ -312,9 +226,9 @@ public class Dbms {
         tables.put(name, table);
 		
         //Debugging(for now)
-        System.out.print("Added Table: " + name + " ( ");
-        table.getColumnsNames().forEach((n)->System.out.print(n + "(" + table.getDataTypes().get(n) + "), "));
-        System.out.println(")");
+       // System.out.print("Added Table: " + name + " ( ");
+        table.getColumnsNames().forEach((n)->System.out.print(""));
+       // System.out.println(")");
 
 
         return true;
