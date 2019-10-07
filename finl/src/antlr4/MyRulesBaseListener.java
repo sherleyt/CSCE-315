@@ -164,7 +164,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
                     }
                     else {
 						//Error check
-                        System.err.println("Trying to compare different or unsupported types: " + attributes.pop().toString() + " " + attributes.pop().toString());
+                        System.err.println("Trying to compare different or unsupported types: [" + attributes.pop().toString() + "] and [" + attributes.pop().toString() + "]");
                     }
                     attributes.push(evaluation);
                 } else {
@@ -258,7 +258,12 @@ public class MyRulesBaseListener extends RulesBaseListener {
             context.getDataTypes().put(attributes.get(i), context.getDataTypes().get(context.getColumnsNames().get(i)));
             context.getDataTypes().remove(context.getColumnsNames().get(i));
 
+            if (context.getPrimaryKeys().contains(context.getColumnsNames().get(i))){
+                context.getPrimaryKeys().remove(context.getColumnsNames().get(i));
+                context.getPrimaryKeys().add(attributes.get(i));
+            }
             context.getColumnsNames().set(i,attributes.get(i));
+
         }
         return true; 
     }
@@ -279,6 +284,17 @@ public class MyRulesBaseListener extends RulesBaseListener {
                     if (table1.getPrimaryKeys().contains(columnName) || table2.getPrimaryKeys().contains(columnName)){
                         context.getPrimaryKeys().add(columnName);
                     }
+                } else if (table1.getDataTypes().get(columnName).toLowerCase().contains("varchar") && table2.getDataTypes().get(columnName).toLowerCase().contains("varchar")){ //Checks if columns are different sized strings
+                    int size1 = Integer.parseInt(table1.getDataTypes().get(columnName).substring(8,table1.getDataTypes().get(columnName).length()-1));
+                    int size2 = Integer.parseInt(table2.getDataTypes().get(columnName).substring(8,table2.getDataTypes().get(columnName).length()-1));
+                    System.err.println("Warning: Union between [" + table1.getName() + "," + table2.getName()+"] of Column: ["+columnName+"] has different sized strings. (Merging to largest)");
+
+                    columnNames.add(columnName);
+                    context.AddColumn(columnName,(size1 >= size2 ? table1.getDataTypes().get(columnName):table2.getDataTypes().get(columnName)));
+                    if (table1.getPrimaryKeys().contains(columnName) || table2.getPrimaryKeys().contains(columnName)){
+                        context.getPrimaryKeys().add(columnName);
+                    }
+
                 } else {
 					//Matching error
                     System.err.println("Warning: Union between [" + table1.getName() + "," + table2.getName()+"] of Column: ["+columnName+"] failed. (Different datatypes)");
