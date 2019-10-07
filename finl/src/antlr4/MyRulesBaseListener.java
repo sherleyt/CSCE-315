@@ -28,7 +28,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
     public dataType ParseType(String input){
         if (input.charAt(0) == '"' && input.charAt(input.length()-1) == '"'){ //if surrounded by quotes, is string
            return dataType.String;
-        } else if (input.matches("[0-9]+")){                      //If digits, is a digit
+        } else if (input.matches("[-]?[0-9]+")){                      //If digits, is a digit
             return dataType.Integer;
         } else  if (input.toLowerCase().equals("true") || input.toLowerCase().equals("false")){     //Booleans
             return dataType.Boolean; 
@@ -323,7 +323,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
             }
         }
 
-        System.out.println(context.getColumnsNames().toString());//Erorr check
+       // System.out.println(context.getColumnsNames().toString());//Erorr check
 		//Go through columns and check similar columns
         for (Hashtable<String,Object> entry1: table1.getEntries()){
             boolean matching = false;
@@ -370,8 +370,59 @@ public class MyRulesBaseListener extends RulesBaseListener {
     }
 	//Not finished, helps * command and creates temp(context) table accordingly
     public boolean TableMathProd(Table context, Table table1, Table table2){
+        //Add Column names/types
+        List<String> col_type1 = table1.getColumnsNames();
+        for(String a: col_type1){
+            context.AddColumn(a,table1.getDataTypes().get(a));
+        }
+       //Add columns from table2
+        List<String> col_type2 = table2.getColumnsNames();
+        for(String a: col_type2){
+            context.AddColumn(a,table2.getDataTypes().get(a));
+        }
+
+        //Add primary keys
+        Set<String> prim_tab1 = table1.getPrimaryKeys();
+        Set<String> prim_tab2 = table2.getPrimaryKeys();
+        for(String a:prim_tab1) {
+            if(context.AddPrimaryKey(a) == false){
+                System.err.println("Matching Primary keys in " + a);
+                return false;
+            }
+        }
+        for(String b:prim_tab2) {
+            if(context.AddPrimaryKey(b)==false) {
+                System.err.println("Matching Primary keys in *" + b);
+                return false;
+            }
+        }
+        //Add all entries
+        HashSet<Hashtable<String,Object>> entries1 = table1.getEntries();
+        HashSet<Hashtable<String,Object>> entries2 = table2.getEntries();
+        List<Object> final_entry;
+
+        //Go through table1's entries and add them to a list of objects
+        for(Hashtable<String,Object> obj1:entries1){
+            final_entry = new ArrayList<Object>();
+            for(int k = 0; k<(table1.getColumnsNames().size());k++){
+                final_entry.add(obj1.get(table1.getColumnsNames().get(k)));
+            }
+
+            //Add values from table2, appended to previous table
+            for(Hashtable<String,Object> obj2:entries2){
+                List<Object> actual_entry = new ArrayList<Object>(final_entry);
+
+                for(int j = 0; j<(table2.getColumnsNames().size());j++){
+                    actual_entry.add(obj2.get(table2.getColumnsNames().get(j)));
+                }
+                    //Add entry with all values in table1 and table2
+                context.AddEntry(actual_entry);
+            }
+        }
         return true;
     }
+
+    //DONT HAVE TO-- ONLY TEAMS of 5
 	//Not finished, helps / command and creates temp(context) table accordingly
     public boolean TableMathNat_Join(Table context, Table table1, Table table2){
         return true;
@@ -382,10 +433,16 @@ public class MyRulesBaseListener extends RulesBaseListener {
         Table table;
         //I'm sorry this is so hacky
         if (atomic_expr.getChildCount() == 1){                             //Just child
+
             table = myDbms.getTable(atomic_expr.getChild(0).getText());
+            if(table == null){
+                System.err.println("Couldnt find table in DBMS, " + atomic_expr.getChild(0).getText());
+                System.exit(1);
+            }
         } else {                                               
             table = getTableFromExpr(atomic_expr.getChild(1));             //second child
         }
+
 
         return table;
     }
@@ -474,18 +531,95 @@ public class MyRulesBaseListener extends RulesBaseListener {
             }
 
         } else if (ctx.children.get(2).getText().equals("VALUES FROM RELATION")) {            //requires evaluation first, then add to table
-            //Values from relation
-            table = getTableFromExpr(ctx.getChild(3));
-            //FINISH THIS//////////////////////////////////////////////////////////
+            //Values from relation, makes a new table according to provided expr
+            Table table2 = getTableFromExpr(ctx.getChild(3));
+
+
+            //Make new table with table previously made that contains values to be added
+            Table table_final = new Table(ctx.children.get(1).getText());
+
+            //Add All values taht need to be added from both tables
+            TableMathUnion(table_final,table2,table);
+
+            //Remove un-updated table and insert new updated one
+            myDbms.delete_table(ctx.children.get(1).getText());
+            myDbms.AddTable(ctx.children.get(1).getText(),table_final);
         }
     }
-	//Not finished, but is just an update command for table
+	//Update command, changes values in table to those specified based on check provided
     @Override public void exitUpdate_cmd(RulesParser.Update_cmdContext ctx) {
+        String table_name_update = ctx.getChild(1).getText();
+        int num_changes = (ctx.getChildCount()-3-2+1)/4;
+
+        //Hashtable of all the changes we need, will be consistent
+        Hashtable<String,Object> updates = new Hashtable<>();
+        for(int i = 0; i < num_changes;i++){
+            String col = ctx.getChild(i*4 + 3).getText();
+            String obj = ctx.getChild(i*4+5).getText();
+            switch (ParseType(obj)){
+                case String:
+                    updates.put(col,obj.substring(1,obj.length()-1));
+                    break;
+                case Integer:
+                    updates.put(col,(Integer.parseInt(obj)));
+                    break;
+                default:
+                    System.err.println("Unrecognized data format " + obj);
+                    break;
+            }
+        }
+
+
+        //Tables of rows taht have to be changed
+        Table filtered_table = new Table(myDbms.getTable(table_name_update));
+        FilterTableSelection(filtered_table,ctx.getChild(ctx.getChildCount()-1));
+
+        //Table of rows that we have to keep
+        Table to_keep = new Table(table_name_update);
+        TableMathDiff(to_keep,myDbms.getTable(table_name_update),filtered_table);
+
+        //Change the entries accordinging to previously made hashtable
+        HashSet<Hashtable<String,Object>> change_entries = filtered_table.getEntries();
+        //Each row
+        for(Hashtable<String,Object> entry1:change_entries){
+            //Each object is changed
+            for(Map.Entry<String,Object> y : updates.entrySet()){
+                if((filtered_table.getColumnsNames().contains(y.getKey()))){ //Change only if key of the column exists
+                    entry1.put(y.getKey(),y.getValue());
+                }
+
+            }
+            //Make a list of the created augmented entry to then add using AddEntry
+            List<Object> changed_entry = new ArrayList<>();
+            for(int o = 0;o < filtered_table.getColumnsNames().size();o++) {
+                changed_entry.add(entry1.get(filtered_table.getColumnsNames().get(o)));
+
+            }
+            to_keep.AddEntry(changed_entry);
+        }
+
+        //Delete the un-updated table from DBMS and then add the new updated one
+        myDbms.delete_table(table_name_update);
+        myDbms.AddTable(table_name_update,to_keep);
 
     }
 	//Not finished, but is just a delete command for table
     @Override public void exitDelete_cmd(RulesParser.Delete_cmdContext ctx) {
+        String table_to_delete_from = ctx.getChild(1).getText();
+        Table to_sub = new Table(myDbms.getTable(table_to_delete_from));
+        //Filter the entries according to specified changes, will be table with values to remove
+        FilterTableSelection(to_sub,ctx.getChild(3));
 
+        //Make a table of final values that have old_table - to_sub
+        Table answer = new Table(table_to_delete_from);
+        TableMathDiff(answer,myDbms.getTable(table_to_delete_from), to_sub);
+
+        //remove old table and add the new updated one
+        if (myDbms.delete_table(table_to_delete_from) == false){
+            System.out.println("Error deleting table");
+            System.exit(1);
+        }
+        myDbms.AddTable(table_to_delete_from,answer);
     }
 	//Create a table from file, acutal code found in table.java
     @Override public void exitOpen_cmd(RulesParser.Open_cmdContext ctx) {
@@ -512,7 +646,8 @@ public class MyRulesBaseListener extends RulesBaseListener {
     }
 	//Not finished yet, but will just exit and not take SQL commands
     @Override public void exitExit_cmd(RulesParser.Exit_cmdContext ctx) {
-
+        System.out.println("Exit command called, no more SQL commands.");
+        System.exit(0);
     }
 
 	//Show command, calls table from dbms using getTableFromAtomicExpr, which will just return from the DBMS
@@ -530,4 +665,3 @@ public class MyRulesBaseListener extends RulesBaseListener {
 
 
 }
-
