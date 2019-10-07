@@ -42,7 +42,7 @@ condition:
     | comparison							//check if normal comparison(defined below)
     | '(' condition ')';                   //Check if in parenthesis
 
-comparison: operand (OP operand)?;  //? is optional operator(to check 
+comparison: operand (OP operand)?;  //? is optional operator(to check...
 
 
 // BATCH 3--
