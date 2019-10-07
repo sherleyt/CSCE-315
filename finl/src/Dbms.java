@@ -5,9 +5,11 @@ package project1;
 import java.util.*;
 import java.io.*;
 
+
 public class Dbms {
 	//All the tables in the DBMS stored in hashtable
     private Hashtable<String,Table> tables;
+    final String dir = System.getProperty("user.dir");
 
     public Dbms(){
 		//make empty hashtable to start
@@ -34,7 +36,7 @@ public class Dbms {
 	//-------------------------
     public void open_table(String tablenam){
 		
-        String csvFile = "C:\\Users\\sjpat\\Desktop\\315\\Project\\src\\project1\\"+tablenam+".csv";
+        String csvFile = dir+ "\\"+tablenam+".csv";
         String line = "";
         BufferedReader entry_from_csv = null;
         String split_char = ",";
@@ -115,9 +117,9 @@ public class Dbms {
 		//make temp table to use to write
         Table temp = tables.get(tablenam);
 		//Delete existing file and make new one exactly same way
-        File fold=new File("C:\\Users\\sjpat\\Desktop\\315\\Project\\src\\project1\\"+tablenam+".csv");
+        File fold=new File(dir+ "\\"+tablenam+".csv");
         fold.delete();
-        File temp2 = new File("C:\\Users\\sjpat\\Desktop\\315\\Project\\src\\project1\\"+tablenam+".csv");
+        File temp2 = new File(dir+ "\\"+tablenam+".csv");
         temp2.createNewFile();
 		
 		//-------------------------
