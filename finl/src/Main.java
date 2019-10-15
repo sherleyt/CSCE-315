@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
+import java.util.*;
+import java.io.*;
 
 import csce315.project1.MovieDatabaseParser;
 import csce315.project1.Movie;
@@ -21,6 +23,8 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+
+
 
 
         MovieDatabaseParser parser1 = new MovieDatabaseParser();
@@ -77,31 +81,53 @@ public class Main {
         }
 
         // To get the query and generate the SQL statements
-        int query = 4; // NEED TO GET THE VALUE FROM THE GUI
+        int query = 3; // NEED TO GET THE VALUE FROM THE GUI
+        boolean checkthree = false;
         switch(query)
         {
+            case 2:
+                //
+                // if actor exists in a movie put everyone in the movie into a table with the count on another column
+                // can use some data structure to check if present or even store everything. and then everything with
+                // the
+                break;
+            case 3:
+                // go through everything in cast table if the person is present, find the genre table for the movie id
+                // add a new row for each genre with the movie id, the persons name, and the genre
+                // then find the most common genre of the table using the example in the slides.
+                // TODO: change the actor_name to get the response frm GUI
+                String actor_name = "Tom Hanks";
+                String tempAct = "";
+                for(int k = 0; k < actor_name.length(); k++) {
+                    if(Character.isLetterOrDigit(actor_name.charAt(k))) {
+                        tempAct = tempAct + actor_name.charAt(k);
+                    }
+                }
+                lines.add("store <- select (name == \"" + tempAct +"\") cast;");
+                lines.add("SHOW store;");
+                // need to multiple the store with the genres
+                checkthree = true;
+                break;
             case 4:
-                String character_name = ""; // get actor 1 from GUI
-                "SELECT name FROM
+                // TODO: change the character_name to get the response frm GUI
+                String character_name = "Woody (voice)"; // get actor 1 from GUI
+                String tempChar = "";
+                for(int k = 0; k < character_name.length(); k++) {
+                    if(Character.isLetterOrDigit(character_name.charAt(k))) {
+                        tempChar = tempChar + character_name.charAt(k);
+                    }
+                }
+                lines.add("store <- select (character_name == \"" + tempChar +"\") cast;");
+                lines.add("temp <- (project (name) store);");
+                lines.add("SHOW temp;");
                 break;
         }
 
-        lines.add("SHOW cast;");
+//        lines.add("SHOW cast;");
         lines.add("SHOW movies;");
-        lines.add("EXIT;");
-
-//        Movie movie = moviesList.get(0);
-//        Credits credits = creditsList.get(0);
-//
-//        System.out.println("Is it an adult film? ");
-//        System.out.println(movie.getAdult());
-//        System.out.println();
-//
-//        System.out.println("What language was the movie in?");
-//        System.out.println(movie.getSpoken_languages().get(0).getName());
+        //lines.add("EXIT;");
 
         //Send to antlr/listener
-//        MyRulesBaseListener listener = new MyRulesBaseListener();
         for (String line : lines) {
             //Actual strings
             CharStream charStream = CharStreams.fromString(line);
@@ -116,5 +142,31 @@ public class Main {
             walker.walk(listener, programContext);
         }
 
+
+        if(checkthree) {
+            // find the most common genre in store
+            // go through each of the entries in store
+            // if genre is
+
+            Table temp = listener.myDbms.getTable("store");
+
+            System.out.println("in the if condition");
+
+            for ( Hashtable<String,Object> entry : temp.getEntries()) {
+                System.out.println(entry);
+            }
+//            Map<String, Integer> count = new TreeMap<String, Integer>();
+//            while (input.hasNext()) {
+//                String next = input.next().toLowerCase();
+//                if (!count.containsKey(next)) {
+//                    count.put(next, 1);
+//                } else {
+//                    count.put(next, count.get(next) + 1);
+//                }
+//            }
+        }
+
+//        System.out.println("here");
+//        listener.myDbms.getTable("movies").Print();
     }
 }
