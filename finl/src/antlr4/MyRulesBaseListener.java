@@ -8,14 +8,14 @@ import java.util.*;
 
 public class MyRulesBaseListener extends RulesBaseListener {
 
-    Dbms myDbms;
-    enum dataType {String, Integer, Column, Boolean};    //enum to help parse objects, and check the type of it 
+    public Dbms myDbms;
+    enum dataType {String, Long, Column, Boolean};    //enum to help parse objects, and check the type of it
 
     public MyRulesBaseListener() {
         myDbms = new Dbms();
     }
 
-	//Go down the tree and get the important object, and add it to List<string> text, that was inputted
+    //Go down the tree and get the important object, and add it to List<string> text, that was inputted
     public void getDeepText(List<String> text, ParseTree tree){
         if (tree.getChildCount() > 0){
             for (int i = 0; i < tree.getChildCount(); i++) {                //Keep going down    
@@ -24,25 +24,25 @@ public class MyRulesBaseListener extends RulesBaseListener {
         } else text.add(tree.getText());
     }
 
-	//Check our enum, and find which data type the string is
+    //Check our enum, and find which data type the string is
     public dataType ParseType(String input){
         if (input.charAt(0) == '"' && input.charAt(input.length()-1) == '"'){ //if surrounded by quotes, is string
-           return dataType.String;
+            return dataType.String;
         } else if (input.matches("[-]?[0-9]+")){                      //If digits, is a digit
-            return dataType.Integer;
+            return dataType.Long;
         } else  if (input.toLowerCase().equals("true") || input.toLowerCase().equals("false")){     //Booleans
-            return dataType.Boolean; 
+            return dataType.Boolean;
         } else {                           //If none of above, has to be column name
             return dataType.Column;
         }
     }
 
-	//filter select's filtering part using Dijkstra shunting-yard algorithm
+    //filter select's filtering part using Dijkstra shunting-yard algorithm
     private boolean FilterTableSelection(Table context, ParseTree condition){
-		//Stack and list for dijstra
+        //Stack and list for dijstra
         Stack<String> operators = new Stack<>();
         List<String> expression = new ArrayList<>();
-		//All possible operations
+        //All possible operations
         Hashtable<String,Integer> values = new Hashtable<>();
         values.put("&&",2);           //&& and || carry more(different) weight than basic operations
         values.put("||",2);
@@ -57,8 +57,8 @@ public class MyRulesBaseListener extends RulesBaseListener {
         List<String> text = new ArrayList<String>();
         getDeepText(text, condition); //defined above
         //System.out.println(text.toString()); //Outputs individual elements
-		
-		//Dijkstra algorithm-- takes all the parts of inputs and puts them in stack accordingly 
+
+        //Dijkstra algorithm-- takes all the parts of inputs and puts them in stack accordingly
         for (int i = 0; i < text.size(); i++){
             String input = text.get(i);
             if (values.keySet().contains(input)){ //If it is one of the expressions, add to list for later check
@@ -106,8 +106,8 @@ public class MyRulesBaseListener extends RulesBaseListener {
                         }
 
                     }
-					//Check if they are operation comparisons
-                    else if (attributes.get(attributes.size()-1) instanceof Integer && attributes.get(attributes.size()-2) instanceof Integer){
+                    //Check if they are operation comparisons
+                    else if (attributes.get(attributes.size()-1) instanceof Long && attributes.get(attributes.size()-2) instanceof Long){
                         //String comparison of 2 atomic comparisons
                         int operand2 = (int)attributes.pop();
                         int operand1 = (int)attributes.pop();
@@ -132,13 +132,13 @@ public class MyRulesBaseListener extends RulesBaseListener {
                                 evaluation = operand1 < operand2;
                                 break;
                             default:
-                                System.err.println("Trying to compare integers: [" +operand1+", "+operand2+"] with: "+operator);
+                                System.err.println("Trying to compare longs: [" +operand1+", "+operand2+"] with: "+operator);
                                 break;
                         }
 
                     }
-					//Check if they are boolean result comparison types, ending
-                    else if (attributes.get(attributes.size()-1) instanceof Boolean && attributes.get(attributes.size()-2) instanceof Boolean){               
+                    //Check if they are boolean result comparison types, ending
+                    else if (attributes.get(attributes.size()-1) instanceof Boolean && attributes.get(attributes.size()-2) instanceof Boolean){
                         //String comparison, find which operator is it
                         boolean operand2 = (boolean)attributes.pop();
                         boolean operand1 = (boolean)attributes.pop();
@@ -163,7 +163,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
 
                     }
                     else {
-						//Error check
+                        //Error check
                         System.err.println("Trying to compare different or unsupported types: [" + attributes.pop().toString() + "] and [" + attributes.pop().toString() + "]");
                     }
                     attributes.push(evaluation);
@@ -174,8 +174,8 @@ public class MyRulesBaseListener extends RulesBaseListener {
                         case String:
                             attributes.push(input.substring(1,input.length()-1));
                             break;
-                        case Integer:
-                            attributes.push(Integer.parseInt(input));
+                        case Long:
+                            attributes.push(Long.parseLong(input));
                             break;
                         case Boolean:
                             if (input.toLowerCase().equals("true"))
@@ -197,22 +197,22 @@ public class MyRulesBaseListener extends RulesBaseListener {
                     }
                 }
             }
-            if (attributes.peek() instanceof Boolean && attributes.size() == 1){       //Check if remove 
+            if (attributes.peek() instanceof Boolean && attributes.size() == 1){       //Check if remove
                 if (!(Boolean)attributes.peek()) {
                     entriesToRemove.add(entry);
                 }
-				//error input
+                //error input
             } else System.err.println("Equation format unsupported. Missing operators comparators/operators:\n"+attributes.toString());
         }
-		//Go through which entries to remove from table and remove
+        //Go through which entries to remove from table and remove
         for(Hashtable<String,Object> entry : entriesToRemove)
             context.getEntries().remove(entry);
 
         //context.Print(); //Used to debug what entries are left
         return true;
     }
-	
-	//helps filter tables for Projection command
+
+    //helps filter tables for Projection command
     private boolean FilterTableProjection(Table context, ParseTree attributeList){
         HashSet<String> attributes = new HashSet<>();                    //Has all attributes as strings
         for (int i = 0; i < attributeList.getChildCount(); i=i+2){
@@ -244,7 +244,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
         }
         return true;
     }
-	//Renames/edits column according to tree/put into context table
+    //Renames/edits column according to tree/put into context table
     public boolean EditTableRenameColumn(Table context, ParseTree attributeList){
         List<String> attributes = new ArrayList<>(); //Entries to pass over
         for (int i = 0; i < attributeList.getChildCount(); i=i+2){            //Go down,
@@ -265,9 +265,9 @@ public class MyRulesBaseListener extends RulesBaseListener {
             context.getColumnsNames().set(i,attributes.get(i));
 
         }
-        return true; 
+        return true;
     }
-	//Not finished, will help + command
+    //Not finished, will help + command
     public boolean TableMathUnion(Table context, Table table1, Table table2){
         List<String> columnNames = new ArrayList<>();
 
@@ -296,7 +296,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
                     }
 
                 } else {
-					//Matching error
+                    //Matching error
                     System.err.println("Warning: Union between [" + table1.getName() + "," + table2.getName()+"] of Column: ["+columnName+"] failed. (Different datatypes)");
                 }
             }
@@ -320,7 +320,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
 
         return true;
     }
-	//Function to help - command, according to syntax
+    //Function to help - command, according to syntax
     public boolean TableMathDiff(Table context, Table table1, Table table2){
         List<String> columnNames = new ArrayList<>();
         for (int i = 0; i< table1.getColumnsNames().size(); i++){
@@ -339,11 +339,11 @@ public class MyRulesBaseListener extends RulesBaseListener {
             }
         }
 
-       // System.out.println(context.getColumnsNames().toString());//Erorr check
-		//Go through columns and check similar columns
+        // System.out.println(context.getColumnsNames().toString());//Erorr check
+        //Go through columns and check similar columns
         for (Hashtable<String,Object> entry1: table1.getEntries()){
             boolean matching = false;
-			//indented for loops for each table
+            //indented for loops for each table
             for (Hashtable<String,Object> entry2: table2.getEntries()) {
                 matching = true;
                 for (String columnName:columnNames){
@@ -361,10 +361,10 @@ public class MyRulesBaseListener extends RulesBaseListener {
                 if (entryValues.size() > 0) context.AddEntry(entryValues);
             }
         }
-		//Go through entries and check similar entries
+        //Go through entries and check similar entries
         for (Hashtable<String,Object> entry2: table2.getEntries()){
             boolean matching = false;
-			//indented for loops for each entry
+            //indented for loops for each entry
             for (Hashtable<String,Object> entry1: table1.getEntries()) {
                 matching = true;
                 for (String columnName:columnNames){
@@ -384,14 +384,14 @@ public class MyRulesBaseListener extends RulesBaseListener {
         }
         return true;
     }
-	//Not finished, helps * command and creates temp(context) table accordingly
+    //Not finished, helps * command and creates temp(context) table accordingly
     public boolean TableMathProd(Table context, Table table1, Table table2){
         //Add Column names/types
         List<String> col_type1 = table1.getColumnsNames();
         for(String a: col_type1){
             context.AddColumn(a,table1.getDataTypes().get(a));
         }
-       //Add columns from table2
+        //Add columns from table2
         List<String> col_type2 = table2.getColumnsNames();
         for(String a: col_type2){
             context.AddColumn(a,table2.getDataTypes().get(a));
@@ -431,7 +431,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
                 for(int j = 0; j<(table2.getColumnsNames().size());j++){
                     actual_entry.add(obj2.get(table2.getColumnsNames().get(j)));
                 }
-                    //Add entry with all values in table1 and table2
+                //Add entry with all values in table1 and table2
                 context.AddEntry(actual_entry);
             }
         }
@@ -439,12 +439,12 @@ public class MyRulesBaseListener extends RulesBaseListener {
     }
 
     //DONT HAVE TO-- ONLY TEAMS of 5
-	//Not finished, helps / command and creates temp(context) table accordingly
+    //Not finished, helps / command and creates temp(context) table accordingly
     public boolean TableMathNat_Join(Table context, Table table1, Table table2){
         return true;
     }
 
-	//Find table name/information from the parse tree, as per syntax
+    //Find table name/information from the parse tree, as per syntax
     public Table getTableFromAtomicExpr(ParseTree atomic_expr){
         Table table;
         //I'm sorry this is so hacky
@@ -455,21 +455,21 @@ public class MyRulesBaseListener extends RulesBaseListener {
                 System.err.println("Couldnt find table in DBMS, " + atomic_expr.getChild(0).getText());
                 System.exit(1);
             }
-        } else {                                               
+        } else {
             table = getTableFromExpr(atomic_expr.getChild(1));             //second child
         }
 
 
         return table;
     }
-	//Function that going down a parse tree to satisfy a given command
+    //Function that going down a parse tree to satisfy a given command
     public Table getTableFromExpr(ParseTree expr){
         Table table;
         expr = expr.getChild(0);
         if (expr instanceof RulesParser.Atomic_exprContext){                 //Ending case
             table = getTableFromAtomicExpr(expr);
         }else if (expr instanceof RulesParser.SelectionContext){               //Syntax for select command
-            table = new Table(getTableFromAtomicExpr(expr.getChild(4)));       
+            table = new Table(getTableFromAtomicExpr(expr.getChild(4)));
             FilterTableSelection(table, expr.getChild(2));
         } else if (expr instanceof RulesParser.ProjectionContext){               //Syntax for projection command
             table = new Table(getTableFromAtomicExpr(expr.getChild(4)));
@@ -503,14 +503,14 @@ public class MyRulesBaseListener extends RulesBaseListener {
         }
         return table;
     }
-	//Create table command, will create according to syntax provided in .g4 file
+    //Create table command, will create according to syntax provided in .g4 file
     @Override public void exitCreate_cmd(RulesParser.Create_cmdContext ctx) {
-		//Get all information in the same syntax everytime, simply keep getting children 
+        //Get all information in the same syntax everytime, simply keep getting children
         String tableName = ctx.children.get(1).getText();
         Table table = new Table(tableName);
         for (int i = 0; i+1 < ctx.children.get(3).getChildCount(); i = i + 3){          //Column names/types here
             table.AddColumn(ctx.children.get(3).getChild(i).getText(),
-                        ctx.children.get(3).getChild(i+1).getText());
+                    ctx.children.get(3).getChild(i+1).getText());
         }
 
         for (int i = 0; i < ctx.children.get(7).getChildCount(); i = i + 2){          //Primary names here
@@ -520,7 +520,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
         myDbms.AddTable(tableName,table); //Add table to DBMS
 
     }
-	//Not finished, Insert into table, using information after either "VALUES FROM" or "... RELATION"
+    //Not finished, Insert into table, using information after either "VALUES FROM" or "... RELATION"
     @Override public void exitInsert_cmd(RulesParser.Insert_cmdContext ctx) {
         Table table = myDbms.getTable(ctx.children.get(1).getText());
         if (ctx.children.get(2).getText().equals("VALUES FROM")){      //Simple, just get all entries and put into a row
@@ -532,8 +532,8 @@ public class MyRulesBaseListener extends RulesBaseListener {
                     case String:
                         data.add(input.substring(1,input.length()-1));
                         break;
-                    case Integer:
-                        data.add(Integer.parseInt(input));
+                    case Long:
+                        data.add(Long.parseLong(input));
                         break;
                     default:
                         System.err.println("Unrecognized data format " + input);
@@ -562,7 +562,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
             myDbms.AddTable(ctx.children.get(1).getText(),table_final);
         }
     }
-	//Update command, changes values in table to those specified based on check provided
+    //Update command, changes values in table to those specified based on check provided
     @Override public void exitUpdate_cmd(RulesParser.Update_cmdContext ctx) {
         String table_name_update = ctx.getChild(1).getText();
         int num_changes = (ctx.getChildCount()-3-2+1)/4;
@@ -576,8 +576,8 @@ public class MyRulesBaseListener extends RulesBaseListener {
                 case String:
                     updates.put(col,obj.substring(1,obj.length()-1));
                     break;
-                case Integer:
-                    updates.put(col,(Integer.parseInt(obj)));
+                case Long:
+                    updates.put(col,(Long.parseLong(obj)));
                     break;
                 default:
                     System.err.println("Unrecognized data format " + obj);
@@ -619,7 +619,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
         myDbms.AddTable(table_name_update,to_keep);
 
     }
-	//Not finished, but is just a delete command for table
+    //Not finished, but is just a delete command for table
     @Override public void exitDelete_cmd(RulesParser.Delete_cmdContext ctx) {
         String table_to_delete_from = ctx.getChild(1).getText();
         Table to_sub = new Table(myDbms.getTable(table_to_delete_from));
@@ -637,12 +637,12 @@ public class MyRulesBaseListener extends RulesBaseListener {
         }
         myDbms.AddTable(table_to_delete_from,answer);
     }
-	//Create a table from file, acutal code found in table.java
+    //Create a table from file, acutal code found in table.java
     @Override public void exitOpen_cmd(RulesParser.Open_cmdContext ctx) {
         String table = ctx.getChild(1).getText();
         myDbms.open_table(table);
     }
-	//Write to file and remove from dmbs, acutal code found in table.java
+    //Write to file and remove from dmbs, acutal code found in table.java
     @Override public void exitClose_cmd(RulesParser.Close_cmdContext ctx) {
         String table = ctx.getChild(1).getText();
         try{
@@ -651,7 +651,7 @@ public class MyRulesBaseListener extends RulesBaseListener {
             System.out.println("error closing");
         }
     }
-	//Write into file, found in table class
+    //Write into file, found in table class
     @Override public void exitWrite_cmd(RulesParser.Write_cmdContext ctx) {
         String table = ctx.getChild(1).getText();
         try{
@@ -660,18 +660,18 @@ public class MyRulesBaseListener extends RulesBaseListener {
             System.out.println("error writing");
         }
     }
-	//Not finished yet, but will just exit and not take SQL commands
+    //Not finished yet, but will just exit and not take SQL commands
     @Override public void exitExit_cmd(RulesParser.Exit_cmdContext ctx) {
         System.out.println("Exit command called, no more SQL commands.");
         System.exit(0);
     }
 
-	//Show command, calls table from dbms using getTableFromAtomicExpr, which will just return from the DBMS
+    //Show command, calls table from dbms using getTableFromAtomicExpr, which will just return from the DBMS
     @Override public void exitShow_cmd(RulesParser.Show_cmdContext ctx) {
         Table table = getTableFromAtomicExpr(ctx.children.get(1));
         table.Print();
     }
-	//Querry command, ads the table in question
+    //Querry command, ads the table in question
     @Override public void exitQuery(RulesParser.QueryContext ctx) {
         String tableName = ctx.getChild(0).getText();
         Table table = new Table(getTableFromExpr(ctx.getChild(2)));
