@@ -109,8 +109,8 @@ public class MyRulesBaseListener extends RulesBaseListener {
                     //Check if they are operation comparisons
                     else if (attributes.get(attributes.size()-1) instanceof Long && attributes.get(attributes.size()-2) instanceof Long){
                         //String comparison of 2 atomic comparisons
-                        int operand2 = (int)attributes.pop();
-                        int operand1 = (int)attributes.pop();
+                        long operand2 = (long)attributes.pop();
+                        long operand1 = (long)attributes.pop();
 
                         switch(operator){
                             case "==":
