@@ -94,7 +94,7 @@ public class Table {
             //Check if value of new entry matches the datatypes of table
             String dataType = columnDataTypes.get(columnNames.get(i));
             //Check if value is integer if supposed to be
-            if(dataType.equals("INTEGER") && !(values.get(i) instanceof Integer)){
+            if(dataType.equals("INTEGER") && !(values.get(i) instanceof Long)){
                 System.err.println("Tried to insert improper entry datatype");
                 return false;
             }
@@ -162,4 +162,3 @@ public class Table {
         System.out.println("");
     }
 }
-
