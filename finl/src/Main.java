@@ -38,8 +38,22 @@ public class Main {
         return newWord;
     }
 
-    // TODO: add back spaces
+    public static String addSpace(String word){
+        String newWord="";
+        for(int k=0;k<word.length();k++){
+            if((word.charAt(k)>='A'&& word.charAt(k)<='Z')||(word.charAt(k)>='a'&& word.charAt(k)<='z')||(word.charAt(k)>=48&& word.charAt(k)<=57)) {
+                newWord=newWord+word.charAt(k);
+            } else {
+                newWord = newWord + " ";
+            }
+        }
+        if(newWord == "") {
+            return "Unknown";
+        }
+        return newWord;
+    }
 
+    // TODO: add back spaces
     public static void main(String[] args) throws Exception {
 
         MovieDatabaseParser parser1 = new MovieDatabaseParser();
@@ -99,10 +113,11 @@ public class Main {
 
         // To get the query and generate the SQL statements
         // TODO: get the value from the GUI
-        int query = 3;
+        int query = 4;
         boolean checkthree = false;
         boolean checktwo = false;
         int checktwocount = 0;
+        boolean checkfour = false;
         switch(query)
         {
             // WORKS ON SINGLE MOVIE AND TWO MOVIES
@@ -133,7 +148,7 @@ public class Main {
                 String character_name = "Woody (voice)";
                 lines.add("store <- select (character_name == \"" + removeSpace(character_name) +"\") cast;");
                 lines.add("temp <- (project (name) store);");
-                lines.add("SHOW temp;");
+                checkfour = true;
                 break;
         }
         System.out.println("here3");
@@ -179,7 +194,7 @@ public class Main {
             System.out.println("The actors who played " + checktwocount + " movies with choosen actor are:");
             for(String key : count.keySet()) {
                 if(count.get(key) == checktwocount) {
-                    System.out.println(key);
+                    System.out.println(addSpace(key));
                 }
             }
         }
@@ -211,8 +226,16 @@ public class Main {
 
             for(String key : count.keySet()) {
                 if(count.get(key) == max) {
-                    System.out.println(key);
+                    System.out.println(addSpace(key));
                 }
+            }
+        }
+
+        if(checkfour) {
+            Table temp = listener.myDbms.getTable("temp");
+            System.out.println("The actors that play characters with the given name are:");
+            for (Hashtable<String,Object> entry : temp.getEntries()) {
+                System.out.println(addSpace(entry.get("name").toString()));
             }
         }
     }
