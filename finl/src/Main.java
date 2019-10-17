@@ -99,7 +99,7 @@ public class Main {
 
         // To get the query and generate the SQL statements
         // TODO: get the value from the GUI
-        int query = 2;
+        int query = 3;
         boolean checkthree = false;
         boolean checktwo = false;
         int checktwocount = 0;
@@ -119,13 +119,13 @@ public class Main {
                 lines.add("temp3 <- select(name_two != name && m_id_two == m_id) temp2;");
 
                 break;
+                // WORKS ON SINGLE AND TWO MOVIES
             case 3:
                 // TODO: change the actor_name to get the response frm GUI
                 String actor_name = "Tom Hanks";
                 lines.add("store <- select (name == \"" + removeSpace(actor_name) +"\") cast;");
                 lines.add("store2 <- store * genres;");
                 lines.add("store3 <- select (m_id == movie_id) store2;");
-                lines.add("SHOW store3;");
                 checkthree = true;
                 break;
             case 4:
@@ -138,7 +138,7 @@ public class Main {
         }
         System.out.println("here3");
 
-        lines.add("SHOW cast;");
+//        lines.add("SHOW cast;");
 //        lines.add("SHOW movies;");
         //lines.add("EXIT;");
 
@@ -214,12 +214,6 @@ public class Main {
                     System.out.println(key);
                 }
             }
-//            for(Hashtable<String,Object> entry : temp.getEntries()) {
-//                String genre_name = entry.get("genre_name").toString();
-//                if(count.get(genre_name) == max) {
-//                    System.out.println(genre_name);
-//                }
-//            }
         }
     }
 }
