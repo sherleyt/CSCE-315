@@ -106,17 +106,19 @@ public static void main(String[] args) {
     //"matrix"
 
     //Create basic tables from the movie/credit parser we made
-    lines.add("CREATE TABLE movies (id INTEGER, popularity INTEGER, has_credits INTEGER) PRIMARY KEY (id);");
+    lines.add("CREATE TABLE movies (name VARCHAR(100), id INTEGER, popularity INTEGER, has_credits INTEGER) PRIMARY KEY (id);");
     lines.add("CREATE TABLE cast (m_id INTEGER, name VARCHAR(150), character_name VARCHAR(150), " +
             "id INTEGER, credit_id VARCHAR(150)) PRIMARY KEY (credit_id);");
-    //Genre table(not basic) for easier use in q4/5
+    //Genre table(not basic) for easier use in q4, and directors table for easier use in q5
     lines.add("CREATE TABLE genres (movie_id INTEGER, genre_id INTEGER, genre_name VARCHAR(150), index INTEGER) PRIMARY KEY (index);");
+    lines.add("CREATE TABLE directors (m_id INTEGER, name VARCHAR(100), job VARCHAR(30)) PRIMARY KEY (m_id);");
+
 
     // adding info into the movies table
     for (int i = 0; i < moviesList.size(); i++) {
-        //Make a movie entry using the movie's id, its rating, and credit in that order
-        lines.add("INSERT INTO movies VALUES FROM (" + moviesList.get(i).getId() + ", " +
-                Math.round(moviesList.get(i).getPopularity() * 1000) + ", " + moviesList.get(i).getHasCredits() + ");");
+        //Make a movie entry using the movie's name, id, its rating, and credit in that order
+        lines.add("INSERT INTO movies VALUES FROM (\""+removeSpace(moviesList.get(i).getTitle()) +"\", "+ moviesList.get(i).getId() + ", " +
+                Math.round(moviesList.get(i).getVote_average()*10) + ", " + moviesList.get(i).getHasCredits() + ");");
         //Add the genre information from the same parser into the genre table(will only contain movie's id and index
         for (int j = 0; j < moviesList.get(i).getGenres().size(); j++) {
             int id = moviesList.get(i).getGenres().get(j).getId();
@@ -185,11 +187,19 @@ public static void main(String[] args) {
             //Make cast table with movie id, cast name, character, id and what they are
             lines.add("INSERT INTO cast VALUES FROM (" + movie_id + ", \"" + newWord + "\", \"" + newWord2 + "\", " + id + ", \"" + credit + "\");");
         }
+        //Get the director's info (id, director name and their job info
+        for(int j = 0; j < creditsList.get(i).getCrewMember().size(); j++) {
+            String director_name = removeSpace(creditsList.get(i).getCrewMember().get(j).getName());  //director's name
+            String job = removeSpace(creditsList.get(i).getCrewMember().get(j).getJob());   //Director's job
+            if(job.equals(removeSpace("Director"))) { //add to table
+                lines.add("INSERT INTO directors VALUES FROM ("+movie_id+", \"" + removeSpace(director_name) +"\", \"" +removeSpace(job)+"\");");
+            }
+        }
     }
     //Run the sql code from the list<string> lines
     run_parse(lines);
     //Check
-    System.out.println("Made tables in DBMS");
+   // System.out.println("Made tables in DBMS");
 }
 //a = "a"ctor
 String process2(String a,String counter){
@@ -283,9 +293,72 @@ String process4(String a){ //a = actor name
     return to_ret4;
 }
 String process5(String a){ //a = actor name
-        String to_return = "q5";
+    List<String> p5 = new ArrayList<String>();
 
-        return to_return;
+    //Make temp tables that ahve the actor's movies
+    p5.add("storetemp <- select (name == \"" + removeSpace(a) +"\") cast;");
+    p5.add("actedmovies <- (project (m_id) storetemp);");
+    //Run those 2 lines
+    run_parse(p5);
+
+    //Get table from database
+    Table temp = listener.myDbms.getTable("actedmovies");
+    //Make set of the actor's movies
+    Set<Object> movie_ids = new HashSet<Object>();
+    for (Hashtable<String,Object> entry : temp.getEntries()) {
+        movie_ids.add(entry.get("m_id"));
+    }
+
+    //Get the ratings information for those movies to find the best rated film
+    Table movies = listener.myDbms.getTable("movies");
+
+    long max = Long.parseLong("0");
+    long max_id = Long.parseLong("0");
+
+    for (Hashtable<String,Object> entry : movies.getEntries()) {
+        if(movie_ids.contains(entry.get("id"))) {//Movie is part of actor's discography
+            if(Long.parseLong(entry.get("popularity").toString()) > max){  //Found a new max, add as the max_id
+                //System.out.println("here");
+                max = Long.parseLong(entry.get("popularity").toString());
+                max_id = Long.parseLong(entry.get("id").toString());
+            }
+        }
+    }
+
+    // Now find the director with matching movie name
+    Table director = listener.myDbms.getTable("directors");
+    String storeDir = "";
+    //Find the director of the best movie from the director table
+    for (Hashtable<String,Object> entry : director.getEntries()) {
+        if(Long.parseLong(entry.get("m_id").toString()) == max_id) {//found it
+            //System.out.println(entry.get("name").toString());
+            storeDir = entry.get("name").toString();
+        }
+    }
+
+    // list of all movies with the director
+    Set<Object> directorMovies = new HashSet<Object>();
+    for (Hashtable<String,Object> entry : director.getEntries()) { //Get movie id of that director
+        if(entry.get("name").toString().equals(storeDir)) {
+            directorMovies.add(entry.get("m_id"));
+        }
+    }
+
+
+    // go through all those movies and get the minimum
+    String worstMovie = "Worst Movie not found correctly"; //Send error message if director could not be found
+    long min = Long.parseLong("101");
+    //Find in the worst movie from the director from the movie table
+    for (Hashtable<String,Object> entry : movies.getEntries()) {
+        if(directorMovies.contains(entry.get("id"))) {  //Found a movie
+            if(Long.parseLong(entry.get("popularity").toString()) < min) {  //Found new min, set the worst movie value to it
+                min = Long.parseLong(entry.get("popularity").toString());
+                worstMovie = addSpace(entry.get("name").toString());
+            }
+        }
+    }
+        //return the string
+        return worstMovie;
 }
 
 @FXML
@@ -356,5 +429,6 @@ void eventq5(ActionEvent event){
 }
 
 }
+
 
 
