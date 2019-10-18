@@ -62,25 +62,25 @@ public class Table {
 
     public boolean AddEntry(List<Object> values) {
 
-        //Check if input can hold primary key indexes;
-        for (String key : primaryKeys){
-            if (values.size() < columnNames.indexOf(key)) {
-                return false;
-            }
-        }
-
-        //Check if input primary keys clash with existing ones
-        for (Hashtable<String,Object> entry: entries){
-            boolean matching = true;
-            for (String key : primaryKeys){
-                if (! entry.get(key).equals(values.get(columnNames.indexOf(key))))
-                    matching = false;
-            }
-            if (matching) {
-                System.err.println("Could not add an entry! (Matching primary keys)");
-                return false;
-            }
-        }
+//        //Check if input can hold primary key indexes;
+//        for (String key : primaryKeys){
+//            if (values.size() < columnNames.indexOf(key)) {
+//                return false;
+//            }
+//        }
+//
+//        //Check if input primary keys clash with existing ones
+//        for (Hashtable<String,Object> entry: entries){
+//            boolean matching = true;
+//            for (String key : primaryKeys){
+//                if (! entry.get(key).equals(values.get(columnNames.indexOf(key))))
+//                    matching = false;
+//            }
+//            if (matching) {
+//                System.err.println("Could not add an entry! (Matching primary keys)");
+//                return false;
+//            }
+//        }
 
         //Check if input matches column datatypes
         //IMPLEMENT THIS
@@ -91,28 +91,28 @@ public class Table {
         Hashtable<String,Object> newEntry = new Hashtable<>();
         for (int i = 0; i < values.size() && i < columnNames.size(); i++){
 
-            //Check if value of new entry matches the datatypes of table
-            String dataType = columnDataTypes.get(columnNames.get(i));
-            //Check if value is integer if supposed to be
-            if(dataType.equals("INTEGER") && !(values.get(i) instanceof Long)){
-                System.err.println("Tried to insert improper entry datatype");
-                return false;
-            }
-            else if(dataType.contains("VARCHAR")){           //Check if value is string if supposed to be
-                if(!(values.get(i) instanceof String)){
-                    System.err.println("Tried to insert improper entry datatype");
-                    return false;
-                }
-                //Get number from VARCHAR(?)
-                String[] after_paren = dataType.split("[(]");
-                String[] after_paren2 = after_paren[1].split("[)]");
-                int size_check = Integer.parseInt(after_paren2[0]);
-                //Check the size of entry's string, and make sure it matches that specified
-                if(String.valueOf(values.get(i)).length() > size_check){
-                    System.err.println("Tried to insert improper entry datatype");
-                    return false;
-                }
-            }
+//            //Check if value of new entry matches the datatypes of table
+//            String dataType = columnDataTypes.get(columnNames.get(i));
+//            //Check if value is integer if supposed to be
+//            if(dataType.equals("INTEGER") && !(values.get(i) instanceof Long)){
+//                System.err.println("Tried to insert improper entry datatype");
+//                return false;
+//            }
+//            else if(dataType.contains("VARCHAR")){           //Check if value is string if supposed to be
+//                if(!(values.get(i) instanceof String)){
+//                    System.err.println("Tried to insert improper entry datatype");
+//                    return false;
+//                }
+//                //Get number from VARCHAR(?)
+//                String[] after_paren = dataType.split("[(]");
+//                String[] after_paren2 = after_paren[1].split("[)]");
+//                int size_check = Integer.parseInt(after_paren2[0]);
+//                //Check the size of entry's string, and make sure it matches that specified
+//                if(String.valueOf(values.get(i)).length() > size_check){
+//                    System.err.println("Tried to insert improper entry datatype");
+//                    return false;
+//                }
+//            }
 
             newEntry.put(columnNames.get(i),values.get(i));
            // System.out.printf("%-15s",columnNames.get(i)+ "="+values.get(i)+ ",");
