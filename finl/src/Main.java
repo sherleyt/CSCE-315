@@ -53,7 +53,6 @@ public class Main {
         return newWord;
     }
 
-    // TODO: add back spaces
     public static void main(String[] args) throws Exception {
 
         MovieDatabaseParser parser1 = new MovieDatabaseParser();
@@ -82,7 +81,7 @@ public class Main {
                 lines.add("INSERT INTO genres"+" VALUES FROM ("+moviesList.get(i).getId()+", "+id+", \"" + name + "\""+", "+index+");");
             }
         }
-        lines.add("SHOW genres;");
+        //lines.add("SHOW genres;");
 
         // adding info into the cast table
         // removing white spaces from name and character name
@@ -109,18 +108,17 @@ public class Main {
             }
         }
 
-        lines.add("SHOW movies;");
+//        lines.add("SHOW movies;");
 
         // To get the query and generate the SQL statements
         // TODO: get the value from the GUI
-        int query = 4;
+        int query = 2;
         boolean checkthree = false;
         boolean checktwo = false;
         int checktwocount = 0;
         boolean checkfour = false;
         switch(query)
         {
-            // WORKS ON SINGLE MOVIE AND TWO MOVIES
             case 2:
                 checktwo = true;
                 // TODO: change the actor_name to get the response frm GUI
@@ -129,18 +127,20 @@ public class Main {
                 int char_count = 2;
                 checktwocount = char_count;
                 lines.add("storetemp <- select (name == \"" + removeSpace(check_actor) +"\") cast;");
-                lines.add("temp <- rename (m_id_two, name_two, character_name_two, id_two, credit_id_two) storetemp;");
-                lines.add("temp2 <- temp * cast;");
-                lines.add("temp3 <- select(name_two != name && m_id_two == m_id) temp2;");
+                lines.add("actedmovies <- (project (m_id) storetemp);");
 
+//                lines.add("storetemp <- select (name == \"" + removeSpace(check_actor) +"\") cast;");
+//                lines.add("temp <- rename (m_id_two, name_two, character_name_two, id_two, credit_id_two) storetemp;");
+//                lines.add("temp2 <- (project (name_two, m_id_two) temp) * (project (name, m_id) cast);");
+//                lines.add("temp3 <- select(name_two != name && m_id_two == m_id) temp2;");
+//                //lines.add("temp2 <- temp * cast;");
+//                //lines.add("temp3 <- select(name_two != name && m_id_two == m_id) temp2;");
                 break;
-                // WORKS ON SINGLE AND TWO MOVIES
             case 3:
                 // TODO: change the actor_name to get the response frm GUI
                 String actor_name = "Tom Hanks";
                 lines.add("store <- select (name == \"" + removeSpace(actor_name) +"\") cast;");
-                lines.add("store2 <- store * genres;");
-                lines.add("store3 <- select (m_id == movie_id) store2;");
+                lines.add("store3 <- select (m_id == movie_id) (store * genres);");
                 checkthree = true;
                 break;
             case 4:
@@ -157,6 +157,8 @@ public class Main {
 //        lines.add("SHOW movies;");
         //lines.add("EXIT;");
 
+        System.out.println("lines " + lines.size());
+//
         //Send to antlr/listener
         for (String line : lines) {
             //System.out.println("parsing line " + line);
@@ -174,22 +176,47 @@ public class Main {
         }
 
         if(checktwo) {
-            System.out.println("in check two");
-            Table temp = listener.myDbms.getTable("temp3");
+            Table temp = listener.myDbms.getTable("actedmovies");
             temp.Print();
+
+            Set<Object> movie_ids = new HashSet<Object>();
+            for (Hashtable<String,Object> entry : temp.getEntries()) {
+                movie_ids.add(entry.get("m_id"));
+            }
+//            Long value = Long.parseLong(862);
+//            System.out.println(movie_ids.contains(new Long("862")));
+
+            Table cast = listener.myDbms.getTable("cast");
 
             Map<String, Integer> count = new TreeMap<String, Integer>();
 
-            // to put in the names
-            for (Hashtable<String,Object> entry : temp.getEntries()) {
-                String name = entry.get("name").toString();
-                if (!count.containsKey(name)) {
-                    count.put(name, 1);
-                } else {
-                    count.put(name, count.get(name) + 1);
+            for (Hashtable<String,Object> entry : cast.getEntries()) {
+                if(movie_ids.contains(entry.get("m_id"))) {
+                    String name = entry.get("name").toString();
+                    if (!count.containsKey(name)) {
+                        count.put(name, 1);
+                    } else {
+                        count.put(name, count.get(name) + 1);
+                    }
                 }
             }
 
+//            System.out.println("in check two");
+//            Table temp = listener.myDbms.getTable("temp3");
+//            temp.Print();
+//
+//            Map<String, Integer> count = new TreeMap<String, Integer>();
+//
+//            // to put in the names
+//            for (Hashtable<String,Object> entry : temp.getEntries()) {
+//                String name = entry.get("name").toString();
+//                if (!count.containsKey(name)) {
+//                    count.put(name, 1);
+//                } else {
+//                    count.put(name, count.get(name) + 1);
+//                }
+//            }
+//
             // To display the actors played in given number of movies with choosen actor
             System.out.println("The actors who played " + checktwocount + " movies with choosen actor are:");
             for(String key : count.keySet()) {
