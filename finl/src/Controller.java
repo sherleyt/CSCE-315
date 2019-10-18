@@ -306,11 +306,15 @@ private TextField out;
 void eventq2(ActionEvent event){
             String input11 = i1.getText(); //Get actor Name
             String input21 = i2.getText(); //Get # appreances
+
+            try{
+                int num = Integer.parseInt(input21);
+            } catch (NumberFormatException e) {
+                out.setText("You entered an improper number");
+                System.exit(0);
+            }
             if(input11.equals("") || input21.equals("")){    //Check empty string
                 out.setText("You entered an empty string");
-            }
-            else if(input21.matches("(0|[1-9]\\d*)")){    //Check if second input is proper integer
-                out.setText("You entered an improper number");
             }
             else{
                 String out_t = process2(input11,input21); //Get the output
