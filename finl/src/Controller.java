@@ -88,12 +88,13 @@ public class Controller{
         }
     }
 public static void main(String[] args) {
-    MovieDatabaseParser parser1 = new MovieDatabaseParser();
-    MyRulesBaseListener listener = new MyRulesBaseListener();
+    parser1 = new MovieDatabaseParser(); //The movie parser from P.Taele
+    listener = new MyRulesBaseListener(); //Rules listener for SQL code
 
 
-    List<Movie> moviesList = null;
-    List<Credits> creditsList = null;
+    List<Movie> moviesList = null;   //Movie.json parser
+    List<Credits> creditsList = null;  //Credits.json parser
+    //Try opening json files
     try {
         moviesList = parser1.deserializeMovies("src/project1/movies.json");
         creditsList = parser1.deserializeCredits("src/project1/credits.json");
@@ -104,20 +105,24 @@ public static void main(String[] args) {
     // create a map that maps each genre we encounter to a genre name
     //"matrix"
 
+    //Create basic tables from the movie/credit parser we made
     lines.add("CREATE TABLE movies (id INTEGER, popularity INTEGER, has_credits INTEGER) PRIMARY KEY (id);");
     lines.add("CREATE TABLE cast (m_id INTEGER, name VARCHAR(150), character_name VARCHAR(150), " +
             "id INTEGER, credit_id VARCHAR(150)) PRIMARY KEY (credit_id);");
+    //Genre table(not basic) for easier use in q4/5
     lines.add("CREATE TABLE genres (movie_id INTEGER, genre_id INTEGER, genre_name VARCHAR(150), index INTEGER) PRIMARY KEY (index);");
 
     // adding info into the movies table
     for (int i = 0; i < moviesList.size(); i++) {
-
+        //Make a movie entry using the movie's id, its rating, and credit in that order
         lines.add("INSERT INTO movies VALUES FROM (" + moviesList.get(i).getId() + ", " +
                 Math.round(moviesList.get(i).getPopularity() * 1000) + ", " + moviesList.get(i).getHasCredits() + ");");
+        //Add the genre information from the same parser into the genre table(will only contain movie's id and index
         for (int j = 0; j < moviesList.get(i).getGenres().size(); j++) {
             int id = moviesList.get(i).getGenres().get(j).getId();
             String name = removeSpace(moviesList.get(i).getGenres().get(j).getName());
             String index = Integer.toString(moviesList.get(i).getId()) + Integer.toString(j) + Integer.toString(i);
+            //The entry will be movie id+genre id + genre name + movie id(j,i) - which serializes entry for easier calling later
             lines.add("INSERT INTO genres" + " VALUES FROM (" + moviesList.get(i).getId() + ", " + id + ", \"" + name + "\"" + ", " + index + ");");
         }
     }
@@ -126,51 +131,64 @@ public static void main(String[] args) {
     // adding info into the cast table
     // removing white spaces from name and character name
     for (int i = 0; i < creditsList.size(); i++) {
-        long movie_id = Long.parseLong(creditsList.get(i).getId());
+        //Get the credit information from credit parser
+        long movie_id = Long.parseLong(creditsList.get(i).getId()); //movie id
         for (int j = 0; j < creditsList.get(i).getCastMember().size(); j++) {
-            String name = creditsList.get(i).getCastMember().get(j).getName();
+            String name = creditsList.get(i).getCastMember().get(j).getName();   //cast's name
             String tempName = "";
+            //For the cast's name, only use letters for easier use
             for (int k = 0; k < name.length(); k++) {
                 if (Character.isLetterOrDigit(name.charAt(k))) {
                     tempName = tempName + name.charAt(k);
                 }
             }
+            //Get the character played by the cast
             String character = creditsList.get(i).getCastMember().get(j).getCharacter();
             String tempChar = "";
+            //Again, only use letters for easier parsing
             for (int k = 0; k < character.length(); k++) {
                 if (Character.isLetterOrDigit(character.charAt(k))) {
                     tempChar = tempChar + character.charAt(k);
                 }
             }
+            //Get the cast member's id
             int id = creditsList.get(i).getCastMember().get(j).getId();
             String credit = creditsList.get(i).getCastMember().get(j).getCredit_id();
+            //Remove spacing/weird letters for the cast member's name
             String newWord = "";
             for (int k = 0; k < name.length(); k++) {
+                //Check if letter, or number
                 if ((name.charAt(k) >= 'A' && name.charAt(k) <= 'Z') || (name.charAt(k) >= 'a' && name.charAt(k) <= 'z') || (name.charAt(k) >= 48 && name.charAt(k) <= 57)) {
                     newWord = newWord + name.charAt(k);
-                } else {
+                } else {//Else put _ for rest
                     newWord = newWord + "_";
                 }
             }
+            //All characters are space/weird letter, use "unknown"
             if (newWord == "") {
                 newWord = "Unknown";
             }
+            //Remove spacing/weird letters for the cast member's character
             String newWord2 = "";
             for (int k = 0; k < character.length(); k++) {
+                //Check if letter, or number
                 if ((character.charAt(k) >= 'A' && character.charAt(k) <= 'Z') || (character.charAt(k) >= 'a' && character.charAt(k) <= 'z') || (character.charAt(k) >= 48 && character.charAt(k) <= 57)) {
                     newWord2 = newWord2 + character.charAt(k);
-                } else {
+                } else {//Else put _ for rest
                     newWord2 = newWord2 + "_";
                 }
             }
+            //All characters are space/weird letter, use "unknown"
             if (newWord2 == "") {
                 newWord2 = "Unknown";
             }
-
+            //Make cast table with movie id, cast name, character, id and what they are
             lines.add("INSERT INTO cast VALUES FROM (" + movie_id + ", \"" + newWord + "\", \"" + newWord2 + "\", " + id + ", \"" + credit + "\");");
         }
     }
+    //Run the sql code from the list<string> lines
     run_parse(lines);
+    //Check
     System.out.println("Made tables in DBMS");
 }
 //a = "a"ctor
@@ -334,3 +352,5 @@ void eventq5(ActionEvent event){
 }
 
 }
+
+
